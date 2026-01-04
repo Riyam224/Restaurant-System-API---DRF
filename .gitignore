@@ -14,3 +14,4 @@ media/
 
 # OS
 .DS_Store
+db.sqlite3
