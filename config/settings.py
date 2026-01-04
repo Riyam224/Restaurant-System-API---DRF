@@ -1,7 +1,6 @@
-import os
 from pathlib import Path
 from datetime import timedelta
-
+import os
 import dj_database_url
 from dotenv import load_dotenv
 
@@ -11,11 +10,11 @@ load_dotenv(BASE_DIR / ".env")
 # --------------------------------------------------
 # CORE
 # --------------------------------------------------
-SECRET_KEY = os.environ.get("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
-    raise Exception("SECRET_KEY is not set")
+    raise RuntimeError("SECRET_KEY is not set")
 
-DEBUG = os.environ.get("DEBUG", "False") == "True"
+DEBUG = os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = [
     "web-production-e1bea.up.railway.app",
@@ -23,10 +22,10 @@ ALLOWED_HOSTS = [
 ]
 
 # --------------------------------------------------
-# APPLICATIONS
+# APPS
 # --------------------------------------------------
 INSTALLED_APPS = [
-    # Django
+    "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -74,13 +73,18 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
 # --------------------------------------------------
-# DRF (JSON ONLY)
+# DRF
 # --------------------------------------------------
 REST_FRAMEWORK = {
+    # JWT (Flutter)
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
+    # ✅ KEEP browsable API for admin & dev
+    "DEFAULT_RENDERER_CLASSES": (
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
@@ -106,7 +110,7 @@ SIMPLE_JWT = {
 # --------------------------------------------------
 SPECTACULAR_SETTINGS = {
     "TITLE": "Restaurant API",
-    "DESCRIPTION": "Authentication, menu, cart, and ordering APIs.",
+    "DESCRIPTION": "Menu, cart, orders, auth APIs",
     "VERSION": "1.0.0",
     "SWAGGER_UI_SETTINGS": {
         "docExpansion": "none",
@@ -115,17 +119,33 @@ SPECTACULAR_SETTINGS = {
 }
 
 # --------------------------------------------------
-# URLS / WSGI
+# URLS / TEMPLATES
 # --------------------------------------------------
 ROOT_URLCONF = "config.urls"
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
+
 WSGI_APPLICATION = "config.wsgi.application"
 
 # --------------------------------------------------
-# DATABASE (POSTGRES ONLY)
+# DATABASE
 # --------------------------------------------------
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    raise Exception("DATABASE_URL is not set")
+    raise RuntimeError("DATABASE_URL not set")
 
 DATABASES = {
     "default": dj_database_url.config(
@@ -136,16 +156,15 @@ DATABASES = {
 }
 
 # --------------------------------------------------
-# PASSWORDS
+# STATIC / MEDIA
 # --------------------------------------------------
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
-    },
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
-]
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # --------------------------------------------------
 # I18N
@@ -156,11 +175,14 @@ USE_I18N = True
 USE_TZ = True
 
 # --------------------------------------------------
-# STATIC / MEDIA
+# JAZZMIN
 # --------------------------------------------------
-STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+JAZZMIN_SETTINGS = {
+    "site_title": "Restaurant Admin",
+    "site_header": "Restaurant System",
+    "site_brand": "Restaurant Dashboard",
+    "welcome_sign": "Welcome to Restaurant Admin",
+    "copyright": "Restaurant API",
+    "show_sidebar": True,
+    "navigation_expanded": True,
+}
