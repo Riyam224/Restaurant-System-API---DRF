@@ -1,0 +1,212 @@
+{
+	"info": {
+		"_postman_id": "restaurant-api-collection",
+		"name": "Restaurant System API (v1)",
+		"description": "Production-ready Restaurant API (DRF + JWT). Includes pagination, rate-limit notes, and automated auth.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{access_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"description": "User authentication and JWT token management",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"auth": {
+							"type": "noauth"
+						},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"testuser@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
+						},
+						"url": "{{base_url}}/auth/register/"
+					}
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"auth": {
+							"type": "noauth"
+						},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"SecurePass123!\"\n}"
+						},
+						"url": "{{base_url}}/auth/login/"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const data = pm.response.json();",
+									"pm.environment.set('access_token', data.access);",
+									"pm.environment.set('refresh_token', data.refresh);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"auth": {
+							"type": "noauth"
+						},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"refresh\": \"{{refresh_token}}\" }"
+						},
+						"url": "{{base_url}}/auth/refresh/"
+					}
+				}
+			]
+		},
+		{
+			"name": "Menu",
+			"description": "Menu catalog & browsing",
+			"item": [
+				{
+					"name": "List Categories",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/categories/"
+					}
+				},
+				{
+					"name": "List Products (Paginated)",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/products/?page={{page}}"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const json = pm.response.json();",
+									"pm.expect(json).to.have.property('results');",
+									"pm.expect(json).to.have.property('count');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Products by Category (Paginated)",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/products/?category_id={{category_id}}&page={{page}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Shopping Cart",
+			"description": "Authenticated cart management",
+			"item": [
+				{
+					"name": "Get Cart",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/cart/"
+					}
+				},
+				{
+					"name": "Add Item to Cart",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"product_id\": {{product_id}}, \"quantity\": 2 }"
+						},
+						"url": "{{base_url}}/cart/add/"
+					}
+				},
+				{
+					"name": "Remove Item from Cart",
+					"request": {
+						"method": "DELETE",
+						"url": "{{base_url}}/cart/item/{{cart_item_id}}/"
+					}
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"description": "Order lifecycle management",
+			"item": [
+				{
+					"name": "Create Order",
+					"request": {
+						"method": "POST",
+						"url": "{{base_url}}/orders/create/"
+					}
+				},
+				{
+					"name": "List My Orders (Paginated)",
+					"description": "⚠️ Rate limit: 100 requests/min per user. Returns 429 if exceeded.",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/orders/?page={{page}}"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.expect(pm.response.code).to.not.equal(429);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Order Details",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/orders/{{order_id}}/"
+					}
+				}
+			]
+		}
+	]
+}
