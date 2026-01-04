@@ -25,9 +25,10 @@ if not SECRET_KEY:
 
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.environ.get(
-    "ALLOWED_HOSTS", "localhost,127.0.0.1,.railway.app"
-).split(",")
+ALLOWED_HOSTS = [
+    "web-production-e1bea.up.railway.app",
+]
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -185,3 +186,7 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://web-production-e1bea.up.railway.app",
+]
