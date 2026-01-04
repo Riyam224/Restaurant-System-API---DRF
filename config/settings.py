@@ -16,7 +16,8 @@ from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get("SECRET_KEY")
+SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-only-for-local")
+
 
 DEBUG = os.environ.get("DEBUG") == "True"
 
