@@ -27,11 +27,13 @@ DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = [
     "web-production-e1bea.up.railway.app",
+    ".railway.app",
 ]
 
 
 # Application definition
 INSTALLED_APPS = [
+    "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -65,28 +67,28 @@ MIDDLEWARE = [
 
 
 CORS_ALLOW_ALL_ORIGINS = True
-
 REST_FRAMEWORK = {
+    # 🔐 Authentication (JWT for Flutter)
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    # 📄 JSON ONLY (clean API response)
+    "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
+    # 📚 Schema
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # 📦 Pagination
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    # 🚦 Throttling
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "user": "100/min",
+    },
 }
-
-REST_FRAMEWORK.update(
-    {
-        "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-        "PAGE_SIZE": 20,
-    }
-)
-
-REST_FRAMEWORK.update(
-    {
-        "DEFAULT_THROTTLE_CLASSES": ["rest_framework.throttling.UserRateThrottle"],
-        "DEFAULT_THROTTLE_RATES": {"user": "100/min"},
-    }
-)
-
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
@@ -190,3 +192,17 @@ MEDIA_ROOT = BASE_DIR / "media"
 CSRF_TRUSTED_ORIGINS = [
     "https://web-production-e1bea.up.railway.app",
 ]
+
+
+JAZZMIN_SETTINGS = {
+    "site_title": "Restaurant Admin",
+    "site_header": "Restaurant System",
+    "site_brand": "Restaurant Dashboard",
+    "welcome_sign": "Welcome to Restaurant Admin",
+    "copyright": "Restaurant API",
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+    ],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+}
