@@ -16,7 +16,6 @@ from core.permissions import ReadWithAPIKeyWriteWithJWT
 # --------------------------------------------------
 @extend_schema(
     tags=["Menu"],
-    security=[{"ApiKeyAuth": []}, {"BearerAuth": []}],
     summary="List menu categories",
     description="Public endpoint. Returns all active menu categories.",
     responses={
@@ -53,7 +52,6 @@ class CategoryListAPIView(generics.ListAPIView):
 # --------------------------------------------------
 @extend_schema(
     tags=["Menu"],
-    security=[{"ApiKeyAuth": []}, {"BearerAuth": []}],
     summary="List available products",
     description=(
         "Public endpoint. Returns available products.\n\n"
@@ -116,7 +114,6 @@ class ProductListAPIView(generics.ListAPIView):
 # --------------------------------------------------
 @extend_schema(
     tags=["Menu"],
-    security=[{"ApiKeyAuth": []}, {"BearerAuth": []}],
     summary="Retrieve product details",
     description="Public endpoint. Returns details for a single available product.",
     responses={

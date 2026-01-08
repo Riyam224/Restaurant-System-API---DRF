@@ -19,7 +19,6 @@ from .serializers import OrderSerializer
 
 @extend_schema(
     tags=["Orders"],
-    security=[{"BearerAuth": []}],
     summary="Create order from cart",
     description="Creates an order using the current user's cart items.",
     request=None,
@@ -95,7 +94,6 @@ class CreateOrderAPIView(APIView):
 
 @extend_schema(
     tags=["Orders"],
-    security=[{"BearerAuth": []}],
     summary="List my orders",
     responses={
         200: OrderSerializer(many=True),
@@ -117,7 +115,6 @@ class UserOrdersAPIView(ListAPIView):
 
 @extend_schema(
     tags=["Orders"],
-    security=[{"BearerAuth": []}],
     summary="List my orders (alias)",
     responses={
         200: OrderSerializer(many=True),
@@ -139,7 +136,6 @@ class OrderListAPIView(ListAPIView):
 
 @extend_schema(
     tags=["Orders"],
-    security=[{"BearerAuth": []}],
     summary="Get order details",
     responses={
         200: OrderSerializer,
@@ -162,7 +158,6 @@ class OrderDetailAPIView(RetrieveAPIView):
 
 @extend_schema(
     tags=["Orders"],
-    security=[{"BearerAuth": []}],
     summary="Update order status (admin)",
     description="Admin-only endpoint. Updates order status.",
     parameters=[

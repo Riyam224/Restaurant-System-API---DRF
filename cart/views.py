@@ -23,7 +23,6 @@ from core.permissions import IsAuthenticatedJWT
 # --------------------------------------------------
 @extend_schema(
     tags=["Cart"],
-    security=[{"BearerAuth": []}],
     summary="Get user cart",
     description="Authenticated endpoint. Returns the current user's cart.",
     responses={
@@ -73,7 +72,6 @@ class CartAPIView(APIView):
 # --------------------------------------------------
 @extend_schema(
     tags=["Cart"],
-    security=[{"BearerAuth": []}],
     summary="Add product to cart",
     description="Authenticated endpoint. Adds a product to the user's cart.",
     request=inline_serializer(
@@ -178,7 +176,6 @@ class AddToCartAPIView(APIView):
 # --------------------------------------------------
 @extend_schema(
     tags=["Cart"],
-    security=[{"BearerAuth": []}],
     summary="Remove item from cart",
     description="Authenticated endpoint. Removes an item from the user's cart.",
     parameters=[
