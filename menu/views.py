@@ -1,6 +1,4 @@
 from rest_framework import generics
-from .models import Category, Product
-from .serializers import CategorySerializer, ProductSerializer
 from drf_spectacular.utils import (
     OpenApiExample,
     OpenApiParameter,
@@ -8,12 +6,22 @@ from drf_spectacular.utils import (
     extend_schema,
 )
 
+from .models import Category, Product
+from .serializers import CategorySerializer, ProductSerializer
+from core.permissions import ReadWithAPIKeyWriteWithJWT
 
+
+# --------------------------------------------------
+# CATEGORY LIST
+# --------------------------------------------------
 @extend_schema(
     tags=["Menu"],
+    security=[{"ApiKeyAuth": []}, {"BearerAuth": []}],
+    summary="List menu categories",
+    description="Public endpoint. Returns all active menu categories.",
     responses={
         200: CategorySerializer(many=True),
-        401: OpenApiResponse(description="Authentication credentials were not provided."),
+        401: OpenApiResponse(description="Invalid or missing API key / token"),
     },
     examples=[
         OpenApiExample(
@@ -28,17 +36,30 @@ from drf_spectacular.utils import (
 )
 class CategoryListAPIView(generics.ListAPIView):
     """
+    Public API (API Key or JWT)
+
     Returns a list of active menu categories.
     """
 
     serializer_class = CategorySerializer
+    permission_classes = [ReadWithAPIKeyWriteWithJWT]
 
     def get_queryset(self):
         return Category.objects.filter(is_active=True)
 
 
+# --------------------------------------------------
+# PRODUCT LIST
+# --------------------------------------------------
 @extend_schema(
     tags=["Menu"],
+    security=[{"ApiKeyAuth": []}, {"BearerAuth": []}],
+    summary="List available products",
+    description=(
+        "Public endpoint. Returns available products.\n\n"
+        "Optional filter:\n"
+        "- `category_id`: Filter products by category"
+    ),
     parameters=[
         OpenApiParameter(
             name="category_id",
@@ -50,7 +71,7 @@ class CategoryListAPIView(generics.ListAPIView):
     ],
     responses={
         200: ProductSerializer(many=True),
-        401: OpenApiResponse(description="Authentication credentials were not provided."),
+        401: OpenApiResponse(description="Invalid or missing API key / token"),
     },
     examples=[
         OpenApiExample(
@@ -72,29 +93,35 @@ class CategoryListAPIView(generics.ListAPIView):
 )
 class ProductListAPIView(generics.ListAPIView):
     """
-    Returns a list of available products.
+    Public API (API Key or JWT)
 
-    Optional query parameters:
-    - category_id (int): Filter products by category
+    Returns a list of available products.
     """
 
     serializer_class = ProductSerializer
+    permission_classes = [ReadWithAPIKeyWriteWithJWT]
 
     def get_queryset(self):
         queryset = Product.objects.filter(is_available=True)
 
         category_id = self.request.query_params.get("category_id")
-        if category_id is not None:
+        if category_id:
             queryset = queryset.filter(category__id=category_id)
 
         return queryset.order_by("created_at")
 
 
+# --------------------------------------------------
+# PRODUCT DETAIL
+# --------------------------------------------------
 @extend_schema(
     tags=["Menu"],
+    security=[{"ApiKeyAuth": []}, {"BearerAuth": []}],
+    summary="Retrieve product details",
+    description="Public endpoint. Returns details for a single available product.",
     responses={
         200: ProductSerializer,
-        401: OpenApiResponse(description="Authentication credentials were not provided."),
+        401: OpenApiResponse(description="Invalid or missing API key / token"),
         404: OpenApiResponse(description="Product not found"),
     },
     examples=[
@@ -115,10 +142,12 @@ class ProductListAPIView(generics.ListAPIView):
 )
 class ProductDetailAPIView(generics.RetrieveAPIView):
     """
-    Public API
-    Returns single product details
+    Public API (API Key or JWT)
+
+    Returns single product details.
     """
 
     queryset = Product.objects.filter(is_available=True)
     serializer_class = ProductSerializer
+    permission_classes = [ReadWithAPIKeyWriteWithJWT]
     lookup_field = "id"

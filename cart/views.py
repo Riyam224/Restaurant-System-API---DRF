@@ -1,12 +1,9 @@
-from cart.serialziers import CartSerializer
+from django.shortcuts import get_object_or_404
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from .models import Cart, CartItem
-from menu.models import Product
-from django.shortcuts import get_object_or_404
-from rest_framework import status
-from rest_framework import serializers
+from rest_framework import status, serializers
+
 from drf_spectacular.utils import (
     OpenApiExample,
     OpenApiParameter,
@@ -15,13 +12,25 @@ from drf_spectacular.utils import (
     inline_serializer,
 )
 
+from cart.serialziers import CartSerializer
+from .models import Cart, CartItem
+from menu.models import Product
+from core.permissions import IsAuthenticatedJWT
 
-# Create your views here.
+
+# --------------------------------------------------
+# GET CART
+# --------------------------------------------------
 @extend_schema(
     tags=["Cart"],
+    security=[{"BearerAuth": []}],
+    summary="Get user cart",
+    description="Authenticated endpoint. Returns the current user's cart.",
     responses={
         200: CartSerializer,
-        401: OpenApiResponse(description="Authentication credentials were not provided."),
+        401: OpenApiResponse(
+            description="Authentication credentials were not provided."
+        ),
     },
     examples=[
         OpenApiExample(
@@ -46,81 +55,113 @@ from drf_spectacular.utils import (
     ],
 )
 class CartAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    """
+    Private API (JWT)
+    Returns the authenticated user's cart.
+    """
+
+    permission_classes = [IsAuthenticatedJWT]
 
     def get(self, request):
         cart, _ = Cart.objects.get_or_create(user=request.user)
         serializer = CartSerializer(cart)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+# --------------------------------------------------
+# ADD TO CART
+# --------------------------------------------------
 @extend_schema(
     tags=["Cart"],
+    security=[{"BearerAuth": []}],
+    summary="Add product to cart",
+    description="Authenticated endpoint. Adds a product to the user's cart.",
     request=inline_serializer(
         name="AddToCartRequest",
         fields={
             "product_id": serializers.IntegerField(),
-            "quantity": serializers.IntegerField(required=False, default=1, min_value=1),
+            "quantity": serializers.IntegerField(
+                required=False,
+                default=1,
+                min_value=1,
+            ),
         },
     ),
     responses={
         200: OpenApiResponse(
             response=CartSerializer,
             description="Item added to cart",
-            examples=[
-                OpenApiExample(
-                    "Add Item Response",
-                    value={
-                        "message": "Item added to cart",
-                        "cart": {
-                            "id": 1,
-                            "items": [
-                                {
-                                    "id": 5,
-                                    "product_id": 10,
-                                    "name": "Classic Burger",
-                                    "price": "12.50",
-                                    "quantity": 2,
-                                    "subtotal": "25.00",
-                                }
-                            ],
-                            "total_items": 2,
-                            "total_price": "25.00",
-                        },
-                    },
-                    response_only=True,
-                )
-            ],
         ),
-        401: OpenApiResponse(description="Authentication credentials were not provided."),
-        404: OpenApiResponse(
-            description="Product not found",
-            examples=[
-                OpenApiExample(
-                    "Product Missing",
-                    value={"detail": "Not found."},
-                    response_only=True,
-                )
-            ],
+        401: OpenApiResponse(
+            description="Authentication credentials were not provided."
         ),
+        404: OpenApiResponse(description="Product not found"),
     },
+    examples=[
+        OpenApiExample(
+            "Add Item Response",
+            value={
+                "message": "Item added to cart",
+                "cart": {
+                    "id": 1,
+                    "items": [
+                        {
+                            "id": 5,
+                            "product_id": 10,
+                            "name": "Classic Burger",
+                            "price": "12.50",
+                            "quantity": 2,
+                            "subtotal": "25.00",
+                        }
+                    ],
+                    "total_items": 2,
+                    "total_price": "25.00",
+                },
+            },
+            response_only=True,
+        )
+    ],
 )
 class AddToCartAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    """
+    Private API (JWT)
+    Adds a product to the authenticated user's cart.
+    """
+
+    permission_classes = [IsAuthenticatedJWT]
 
     def post(self, request):
-        product_id = request.data.get("product_id")
-        quantity = int(request.data.get("quantity", 1))
+        # Validate input
+        serializer = inline_serializer(
+            fields={
+                "product_id": serializers.IntegerField(),
+                "quantity": serializers.IntegerField(
+                    required=False,
+                    default=1,
+                    min_value=1,
+                ),
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+
+        product_id = serializer.validated_data["product_id"]
+        quantity = serializer.validated_data["quantity"]
 
         product = get_object_or_404(Product, id=product_id)
         cart, _ = Cart.objects.get_or_create(user=request.user)
 
         item, created = CartItem.objects.get_or_create(
-            cart=cart, product=product, defaults={"price": product.price}
+            cart=cart,
+            product=product,
+            defaults={"price": product.price},
         )
 
-        if not created:
+        if created:
+            item.quantity = quantity
+        else:
             item.quantity += quantity
+
         item.save()
 
         return Response(
@@ -128,60 +169,71 @@ class AddToCartAPIView(APIView):
                 "message": "Item added to cart",
                 "cart": CartSerializer(cart).data,
             },
-            status=200,
+            status=status.HTTP_200_OK,
         )
 
 
+# --------------------------------------------------
+# REMOVE CART ITEM
+# --------------------------------------------------
 @extend_schema(
     tags=["Cart"],
+    security=[{"BearerAuth": []}],
+    summary="Remove item from cart",
+    description="Authenticated endpoint. Removes an item from the user's cart.",
     parameters=[
         OpenApiParameter(
             name="item_id",
             type=int,
             location=OpenApiParameter.PATH,
-            description="Cart item id to remove",
+            description="Cart item ID",
         )
     ],
     responses={
         200: OpenApiResponse(
             response=CartSerializer,
             description="Item removed",
-            examples=[
-                OpenApiExample(
-                    "Remove Item Response",
-                    value={
-                        "message": "Item removed from cart",
-                        "cart": {
-                            "id": 1,
-                            "items": [],
-                            "total_items": 0,
-                            "total_price": "0.00",
-                        },
-                    },
-                    response_only=True,
-                )
-            ],
         ),
-        401: OpenApiResponse(description="Authentication credentials were not provided."),
-        404: OpenApiResponse(
-            description="Item not found",
-            examples=[
-                OpenApiExample(
-                    "Missing Item",
-                    value={"detail": "Not found."},
-                    response_only=True,
-                )
-            ],
+        401: OpenApiResponse(
+            description="Authentication credentials were not provided."
         ),
+        404: OpenApiResponse(description="Item not found"),
     },
+    examples=[
+        OpenApiExample(
+            "Remove Item Response",
+            value={
+                "message": "Item removed from cart",
+                "cart": {
+                    "id": 1,
+                    "items": [],
+                    "total_items": 0,
+                    "total_price": "0.00",
+                },
+            },
+            response_only=True,
+        )
+    ],
 )
 class RemoveCartItemAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    """
+    Private API (JWT)
+    Removes an item from the authenticated user's cart.
+    """
+
+    permission_classes = [IsAuthenticatedJWT]
 
     def delete(self, request, item_id):
-        item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+        item = get_object_or_404(
+            CartItem,
+            id=item_id,
+            cart__user=request.user,
+        )
+
         item.delete()
+
         cart, _ = Cart.objects.get_or_create(user=request.user)
+
         return Response(
             {
                 "message": "Item removed from cart",

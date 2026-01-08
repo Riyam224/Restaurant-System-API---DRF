@@ -453,11 +453,10 @@ curl http://localhost:8000/api/v1/cart/ \
 
 **Using Swagger UI:**
 
-1. Navigate to http://localhost:8000/api/docs/
-2. Click "Authorize" button
-3. Enter: `Bearer <your_access_token>`
-4. Click "Authorize"
-5. Test endpoints interactively
+1. Navigate to http://localhost:8000/api/docs/ (endpoints grouped by tags: Accounts, Menu, Cart, Orders).
+2. Click "Authorize" and enter `Bearer <your_access_token>` (JWT). If you install `djangorestframework-api-key`, you can also authorize with an API key for the read-only Menu endpoints.
+3. Expand an endpoint to see the built-in request/response examples and documented status codes.
+4. Execute requests directly from the UI.
 
 ### Automated Testing
 

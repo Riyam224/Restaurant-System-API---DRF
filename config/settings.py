@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     # Third-party
     "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework_api_key",  # ✅ API KEY (TMDB-style)
     "drf_spectacular",
     "corsheaders",
     # Local
@@ -61,38 +62,65 @@ MIDDLEWARE = [
 ]
 
 # --------------------------------------------------
-# CORS / CSRF
+# SECURITY (IMPORTANT FOR PUBLIC API)
 # --------------------------------------------------
-CORS_ALLOW_ALL_ORIGINS = True
+SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+X_FRAME_OPTIONS = "DENY"
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+
+# --------------------------------------------------
+# CORS / CSRF (NO allow all in production)
+# --------------------------------------------------
+CORS_ALLOW_ALL_ORIGINS = False
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://your-frontend-domain.com",
+]
+
+CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
     "https://web-production-e1bea.up.railway.app",
 ]
 
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-
 # --------------------------------------------------
-# DRF
+# DRF (Professional Defaults)
 # --------------------------------------------------
 REST_FRAMEWORK = {
-    # JWT (Flutter)
+    # Auth (JWT + API Key via permissions)
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    # ✅ KEEP browsable API for admin & dev
+    # Rendering
     "DEFAULT_RENDERER_CLASSES": (
         "rest_framework.renderers.JSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
     ),
+    # Schema
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Pagination
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    # Throttling (Public API Protection)
     "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "user": "100/min",
+        "anon": "100/hour",
+        "user": "2000/day",
     },
 }
 
@@ -102,19 +130,49 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 # --------------------------------------------------
-# SWAGGER
+# SWAGGER / OPENAPI
 # --------------------------------------------------
 SPECTACULAR_SETTINGS = {
     "TITLE": "Restaurant API",
-    "DESCRIPTION": "Menu, cart, orders, auth APIs",
+    "DESCRIPTION": (
+        "Professional Restaurant API.\n\n"
+        "• JWT for authenticated users\n"
+        "• API Keys for public access (TMDB-style)\n"
+        "• Rate-limited & production ready"
+    ),
     "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SERVERS": [
+        {"url": "http://localhost:8000", "description": "Local development"},
+    ],
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            },
+            "ApiKeyAuth": {
+                "type": "apiKey",
+                "name": "X-API-Key",
+                "in": "header",
+            },
+        }
+    },
+    "SECURITY": [
+        {"BearerAuth": []},
+    ],
+    "CONTACT": {"name": "API Support", "email": "support@example.com"},
+    "LICENSE": {"name": "Proprietary"},
     "SWAGGER_UI_SETTINGS": {
         "docExpansion": "none",
-        "defaultModelsExpandDepth": -1,
+        "persistAuthorization": True,
     },
 }
 

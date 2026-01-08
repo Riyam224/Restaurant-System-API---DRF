@@ -1,9 +1,8 @@
-from rest_framework import serializers
+from django.shortcuts import get_object_or_404
+from rest_framework import serializers, status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.views import APIView
 from drf_spectacular.utils import (
     OpenApiExample,
     OpenApiParameter,
@@ -12,6 +11,7 @@ from drf_spectacular.utils import (
     inline_serializer,
 )
 
+from core.permissions import IsAdminUserJWT, IsAuthenticatedJWT
 from cart.models import CartItem
 from .models import Order, OrderItem
 from .serializers import OrderSerializer
@@ -19,6 +19,9 @@ from .serializers import OrderSerializer
 
 @extend_schema(
     tags=["Orders"],
+    security=[{"BearerAuth": []}],
+    summary="Create order from cart",
+    description="Creates an order using the current user's cart items.",
     request=None,
     responses={
         201: OpenApiResponse(
@@ -38,24 +41,22 @@ from .serializers import OrderSerializer
         ),
         400: OpenApiResponse(
             description="Cart is empty",
-            examples=[
-                OpenApiExample(
-                    "Empty Cart",
-                    value={"detail": "Cart is empty"},
-                    response_only=True,
-                )
-            ],
+            examples=[OpenApiExample("Empty Cart", value={"detail": "Cart is empty"})],
         ),
         401: OpenApiResponse(description="Authentication credentials were not provided."),
     },
 )
 class CreateOrderAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = OrderSerializer
+    """
+    User API (JWT)
+    Creates an order using the authenticated user's cart items.
+    """
+
+    permission_classes = [IsAuthenticatedJWT]
 
     def post(self, request):
         user = request.user
-        cart_items = CartItem.objects.filter(user=user)
+        cart_items = CartItem.objects.filter(cart__user=user)
 
         if not cart_items.exists():
             return Response(
@@ -94,14 +95,21 @@ class CreateOrderAPIView(APIView):
 
 @extend_schema(
     tags=["Orders"],
+    security=[{"BearerAuth": []}],
+    summary="List my orders",
     responses={
         200: OrderSerializer(many=True),
         401: OpenApiResponse(description="Authentication credentials were not provided."),
     },
 )
 class UserOrdersAPIView(ListAPIView):
+    """
+    User API (JWT)
+    Lists the authenticated user's orders.
+    """
+
     serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedJWT]
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user).order_by("-created_at")
@@ -109,14 +117,21 @@ class UserOrdersAPIView(ListAPIView):
 
 @extend_schema(
     tags=["Orders"],
+    security=[{"BearerAuth": []}],
+    summary="List my orders (alias)",
     responses={
         200: OrderSerializer(many=True),
         401: OpenApiResponse(description="Authentication credentials were not provided."),
     },
 )
 class OrderListAPIView(ListAPIView):
+    """
+    User API (JWT)
+    Lists the authenticated user's orders (alias endpoint).
+    """
+
     serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedJWT]
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user)
@@ -124,6 +139,8 @@ class OrderListAPIView(ListAPIView):
 
 @extend_schema(
     tags=["Orders"],
+    security=[{"BearerAuth": []}],
+    summary="Get order details",
     responses={
         200: OrderSerializer,
         401: OpenApiResponse(description="Authentication credentials were not provided."),
@@ -131,8 +148,13 @@ class OrderListAPIView(ListAPIView):
     },
 )
 class OrderDetailAPIView(RetrieveAPIView):
+    """
+    User API (JWT)
+    Retrieves a single order for the authenticated user.
+    """
+
     serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedJWT]
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user)
@@ -140,6 +162,9 @@ class OrderDetailAPIView(RetrieveAPIView):
 
 @extend_schema(
     tags=["Orders"],
+    security=[{"BearerAuth": []}],
+    summary="Update order status (admin)",
+    description="Admin-only endpoint. Updates order status.",
     parameters=[
         OpenApiParameter(
             name="pk",
@@ -167,39 +192,42 @@ class OrderDetailAPIView(RetrieveAPIView):
                 )
             ],
         ),
-        400: OpenApiResponse(
-            description="Invalid status",
-            examples=[
-                OpenApiExample(
-                    "Invalid Status",
-                    value={"detail": "Invalid status"},
-                    response_only=True,
-                )
-            ],
+        400: OpenApiResponse(description="Invalid status"),
+        401: OpenApiResponse(
+            description="Authentication credentials were not provided."
         ),
-        401: OpenApiResponse(description="Authentication credentials were not provided."),
         404: OpenApiResponse(description="Order not found"),
     },
 )
 class UpdateOrderStatusAPIView(APIView):
-    permission_classes = [IsAdminUser]
+    """
+    Admin API (JWT)
+    Updates order status.
+    """
+
+    permission_classes = [IsAdminUserJWT]
 
     def patch(self, request, pk):
-        order = Order.objects.get(pk=pk)
-        new_status = request.data.get("status")
+        order = get_object_or_404(Order, pk=pk)
 
-        if new_status not in dict(Order.STATUS_CHOICES):
-            return Response(
-                {"detail": "Invalid status"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer = inline_serializer(
+            name="OrderStatusUpdateValidator",
+            fields={
+                "status": serializers.ChoiceField(
+                    choices=[choice[0] for choice in Order.STATUS_CHOICES]
+                )
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
 
-        order.status = new_status
+        order.status = serializer.validated_data["status"]
         order.save()
 
         return Response(
             {
                 "message": "Order status updated",
                 "status": order.status,
-            }
+            },
+            status=status.HTTP_200_OK,
         )

@@ -21,6 +21,7 @@ from .serializers import RegisterSerializer
 
 @extend_schema(
     tags=["Accounts"],
+    security=[],
     request=RegisterSerializer,
     responses={
         201: RegisterSerializer,
@@ -55,6 +56,7 @@ class RegisterAPIView(generics.CreateAPIView):
 
 @extend_schema(
     tags=["Accounts"],
+    security=[],
     request=inline_serializer(
         name="LoginRequest",
         fields={
@@ -98,6 +100,7 @@ class LoginAPIView(TokenObtainPairView):
 
 @extend_schema(
     tags=["Accounts"],
+    security=[],
     request=inline_serializer(
         name="RefreshTokenRequest",
         fields={"refresh": serializers.CharField()},
@@ -135,6 +138,7 @@ class RefreshTokenAPIView(TokenRefreshView):
 
 @extend_schema(
     tags=["Accounts"],
+    security=[{"BearerAuth": []}],
     responses={
         200: inline_serializer(
             name="ProfileResponse",

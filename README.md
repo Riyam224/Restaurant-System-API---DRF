@@ -37,6 +37,16 @@ The Restaurant System API is a RESTful backend service designed for restaurant o
 - **Order Processing**: Complete order lifecycle from creation to delivery
 - **API Documentation**: Interactive Swagger UI for API exploration
 
+### Documentation Quick Links
+
+- **Interactive Docs**: [/api/docs/](http://localhost:8000/api/docs/) (tagged by Accounts, Menu, Cart, Orders with examples and responses)
+- **OpenAPI Schema**: [/api/schema/](http://localhost:8000/api/schema/) (downloadable JSON/YAML)
+- **Architecture Guide**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **API Reference**: [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)
+- **Database Schema**: [docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md)
+- **Setup Guide**: [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md)
+- **Postman Quickstart**: [docs/POSTMAN_QUICK_REFERENCE.md](docs/POSTMAN_QUICK_REFERENCE.md)
+
 ## Features
 
 ### Authentication & User Management
@@ -115,8 +125,8 @@ The Restaurant System API is a RESTful backend service designed for restaurant o
 - **Automatic Pagination**: 20 items per page on all list endpoints
 - **Rate Limiting**: 100 requests/minute per authenticated user
 - **Token Authentication**: JWT with 30-minute access and 7-day refresh tokens
-- **Interactive Documentation**: Swagger UI at `/api/docs/`
-- **Schema Export**: OpenAPI 3.0 schema at `/api/schema/`
+- **Interactive Documentation**: Swagger UI at `/api/docs/` (tagged by domain: Accounts, Menu, Cart, Orders)
+- **Schema Export**: OpenAPI 3.0 schema at `/api/schema/` with inlined request/response examples and documented status codes
 - **Password Validation**: Django's built-in validators for security
 - **Request Throttling**: Protection against API abuse
 
@@ -218,8 +228,16 @@ restaurant_system/
 
 The project includes comprehensive interactive API documentation powered by Swagger UI:
 
-- **Swagger UI**: [http://localhost:8000/api/docs/](http://localhost:8000/api/docs/)
-- **OpenAPI Schema**: [http://localhost:8000/api/schema/](http://localhost:8000/api/schema/)
+- **Swagger UI**: [http://localhost:8000/api/docs/](http://localhost:8000/api/docs/) (grouped by tags, with request/response examples and documented status codes)
+- **OpenAPI Schema**: [http://localhost:8000/api/schema/](http://localhost:8000/api/schema/) (JSON/YAML)
+- **Deep Dive**: [API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) for full endpoint details
+- **Architecture & Data**: [ARCHITECTURE.md](docs/ARCHITECTURE.md) and [DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md)
+
+Docs generation flow:
+
+```
+Views/Serializers → drf-spectacular (schema) → /api/schema/ → Swagger UI (/api/docs/)
+```
 
 ### Postman Collection
 
@@ -297,6 +315,21 @@ The API uses JWT (JSON Web Token) authentication:
 **Admin Only**:
 
 - Order status updates
+
+**Access Matrix**
+
+```
+┌────────────┬─────────────────────────────┬──────────────────────────────┐
+│ Domain     │ Endpoints                   │ Auth                         │
+├────────────┼─────────────────────────────┼──────────────────────────────┤
+│ Accounts   │ /auth/*, /profile           │ JWT (Bearer)                 │
+│ Menu       │ /categories, /products/*    │ Public (optionally API Key)* │
+│ Cart       │ /cart/*                     │ JWT (Bearer)                 │
+│ Orders     │ /orders/*                   │ JWT (Bearer)                 │
+│ Orders     │ /orders/<id>/status/        │ Admin + JWT (Bearer)         │
+└────────────┴─────────────────────────────┴──────────────────────────────┘
+*If `djangorestframework-api-key` is installed, Menu reads also accept API Key (`X-API-Key` header).
+```
 
 ## Documentation
 
