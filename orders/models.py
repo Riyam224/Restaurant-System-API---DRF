@@ -6,7 +6,6 @@ User = get_user_model()
 
 
 class Order(models.Model):
-
     STATUS_CHOICES = (
         ("pending", "Pending"),
         ("preparing", "Preparing"),
@@ -17,7 +16,8 @@ class Order(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
 
-    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    # Keep the field (we still store it)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
 
@@ -25,6 +25,14 @@ class Order(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+    def calculate_total(self):
+        return sum(item.subtotal() for item in self.items.all())
+
+    def save(self, *args, **kwargs):
+        # auto-calculate before saving
+        self.total_price = self.calculate_total()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Order #{self.id} - {self.user}"

@@ -42,7 +42,9 @@ from .serializers import OrderSerializer
             description="Cart is empty",
             examples=[OpenApiExample("Empty Cart", value={"detail": "Cart is empty"})],
         ),
-        401: OpenApiResponse(description="Authentication credentials were not provided."),
+        401: OpenApiResponse(
+            description="Authentication credentials were not provided."
+        ),
     },
 )
 class CreateOrderAPIView(APIView):
@@ -63,13 +65,10 @@ class CreateOrderAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        total_price = sum(item.subtotal() for item in cart_items)
+        # 1️⃣ Create empty order
+        order = Order.objects.create(user=user)
 
-        order = Order.objects.create(
-            user=user,
-            total_price=total_price,
-        )
-
+        # 2️⃣ Create order items ONCE
         for item in cart_items:
             OrderItem.objects.create(
                 order=order,
@@ -79,6 +78,10 @@ class CreateOrderAPIView(APIView):
                 quantity=item.quantity,
             )
 
+        # 3️⃣ Recalculate total (handled by model.save)
+        order.save()
+
+        # 4️⃣ Clear cart
         cart_items.delete()
 
         return Response(
@@ -97,7 +100,9 @@ class CreateOrderAPIView(APIView):
     summary="List my orders",
     responses={
         200: OrderSerializer(many=True),
-        401: OpenApiResponse(description="Authentication credentials were not provided."),
+        401: OpenApiResponse(
+            description="Authentication credentials were not provided."
+        ),
     },
 )
 class UserOrdersAPIView(ListAPIView):
@@ -118,7 +123,9 @@ class UserOrdersAPIView(ListAPIView):
     summary="List my orders (alias)",
     responses={
         200: OrderSerializer(many=True),
-        401: OpenApiResponse(description="Authentication credentials were not provided."),
+        401: OpenApiResponse(
+            description="Authentication credentials were not provided."
+        ),
     },
 )
 class OrderListAPIView(ListAPIView):
@@ -139,7 +146,9 @@ class OrderListAPIView(ListAPIView):
     summary="Get order details",
     responses={
         200: OrderSerializer,
-        401: OpenApiResponse(description="Authentication credentials were not provided."),
+        401: OpenApiResponse(
+            description="Authentication credentials were not provided."
+        ),
         404: OpenApiResponse(description="Order not found"),
     },
 )
