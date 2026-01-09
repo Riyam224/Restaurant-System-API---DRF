@@ -86,7 +86,7 @@ CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
-    "https://your-frontend-domain.com",
+    "https://web-production-e1bea.up.railway.app",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
