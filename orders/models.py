@@ -16,22 +16,30 @@ class Order(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
 
-    # Keep the field (we still store it)
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,        # ✅ IMPORTANT
+        blank=True        # ✅ IMPORTANT
+    )
 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending"
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at"]
 
-    def calculate_total(self):
+    def calculate_total_price(self):
         return sum(item.subtotal() for item in self.items.all())
 
     def save(self, *args, **kwargs):
-        # auto-calculate before saving
-        self.total_price = self.calculate_total()
+        # Always recalculate before saving
+        self.total_price = self.calculate_total_price()
         super().save(*args, **kwargs)
 
     def __str__(self):

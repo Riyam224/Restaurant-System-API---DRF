@@ -48,11 +48,6 @@ from .serializers import OrderSerializer
     },
 )
 class CreateOrderAPIView(APIView):
-    """
-    User API (JWT)
-    Creates an order using the authenticated user's cart items.
-    """
-
     permission_classes = [IsAuthenticatedJWT]
 
     def post(self, request):
@@ -65,10 +60,8 @@ class CreateOrderAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # 1️⃣ Create empty order
         order = Order.objects.create(user=user)
 
-        # 2️⃣ Create order items ONCE
         for item in cart_items:
             OrderItem.objects.create(
                 order=order,
@@ -78,10 +71,9 @@ class CreateOrderAPIView(APIView):
                 quantity=item.quantity,
             )
 
-        # 3️⃣ Recalculate total (handled by model.save)
+        # Recalculate total AFTER items are created
         order.save()
 
-        # 4️⃣ Clear cart
         cart_items.delete()
 
         return Response(
