@@ -1,5 +1,3 @@
-
-
 from pathlib import Path
 from datetime import timedelta
 import os
@@ -8,7 +6,7 @@ import dj_database_url
 from dotenv import load_dotenv
 
 # --------------------------------------------------
-# BASE
+# BASE DIRECTORY & ENV VARIABLES
 # --------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
