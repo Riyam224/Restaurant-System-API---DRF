@@ -78,7 +78,8 @@ class Review(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user.username} - Product {self.product_id} - {self.rating}★"
+        username = getattr(self.user, "username", "User")
+        return f"Review #{self.id} • {username} • {self.rating}★"
 
     @staticmethod
     def get_product_average_rating(product_id):
@@ -137,5 +138,5 @@ class ReviewHelpfulness(models.Model):
         verbose_name_plural = "Review helpfulness votes"
 
     def __str__(self):
-        helpful_text = "helpful" if self.is_helpful else "not helpful"
-        return f"{self.user.username} found review #{self.review.id} {helpful_text}"
+        username = getattr(self.user, "username", "User")
+        return f"Vote #{self.id} by {username}"
