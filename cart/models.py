@@ -10,6 +10,7 @@ class Cart(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="cart")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def total_items(self):
         return sum(item.quantity for item in self.items.all())
