@@ -73,7 +73,6 @@ class CouponUsageAdmin(admin.ModelAdmin):
     list_filter = ("used_at",)
     search_fields = (
         "coupon__code",
-        "user__username",
         "user__email",
         "order_id",
     )
