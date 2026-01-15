@@ -15,6 +15,7 @@ from drf_spectacular.utils import (
 from core.permissions import IsAdminUserJWT, IsAuthenticatedJWT
 from cart.models import CartItem
 from addresses.models import Address
+from coupons.models import Coupon, CouponUsage
 from .models import Order, OrderItem
 from .serializers import OrderSerializer
 
@@ -27,6 +28,7 @@ from .serializers import OrderSerializer
         name="CreateOrderRequest",
         fields={
             "address_id": serializers.IntegerField(),
+            "coupon_code": serializers.CharField(required=False, allow_blank=True),
         },
     ),
     responses={
@@ -39,6 +41,8 @@ from .serializers import OrderSerializer
                         "message": "Order created successfully",
                         "order_id": 15,
                         "status": "pending",
+                        "subtotal": "50.00",
+                        "discount_amount": "5.00",
                         "total_price": "45.00",
                     },
                     response_only=True,
@@ -60,11 +64,14 @@ class CreateOrderAPIView(APIView):
     def post(self, request):
         user = request.user
         address_id = request.data.get("address_id")
+        coupon_code = request.data.get("coupon_code", "").upper().strip()
+
         if not address_id:
             return Response(
                 {"detail": "address_id is required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
         address = get_object_or_404(Address, id=address_id, user=user)
         cart_items = CartItem.objects.filter(cart__user=user)
 
@@ -74,9 +81,52 @@ class CreateOrderAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        with transaction.atomic():
-            order = Order.objects.create(user=user, address=address)
+        # Calculate order subtotal
+        subtotal = sum(item.product.price * item.quantity for item in cart_items)
 
+        # Handle coupon if provided
+        coupon = None
+        discount_amount = 0
+        if coupon_code:
+            try:
+                coupon = Coupon.objects.get(code=coupon_code)
+                can_use, message = coupon.can_user_use(user)
+
+                if not can_use:
+                    return Response(
+                        {"detail": message},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                if subtotal < coupon.minimum_order_amount:
+                    return Response(
+                        {
+                            "detail": f"Minimum order amount of ${coupon.minimum_order_amount} required for this coupon"
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                discount_amount, final_amount = coupon.calculate_discount(subtotal)
+            except Coupon.DoesNotExist:
+                return Response(
+                    {"detail": "Invalid coupon code"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            final_amount = subtotal
+
+        with transaction.atomic():
+            # Create order with pricing details
+            order = Order.objects.create(
+                user=user,
+                address=address,
+                subtotal=subtotal,
+                discount_amount=discount_amount,
+                total_price=final_amount,
+                coupon_code=coupon_code if coupon else "",
+            )
+
+            # Create order items
             for item in cart_items:
                 OrderItem.objects.create(
                     order=order,
@@ -86,6 +136,19 @@ class CreateOrderAPIView(APIView):
                     quantity=item.quantity,
                 )
 
+            # Record coupon usage
+            if coupon:
+                CouponUsage.objects.create(
+                    coupon=coupon,
+                    user=user,
+                    order_id=order.id,
+                    order_amount=subtotal,
+                    discount_amount=discount_amount,
+                    final_amount=final_amount,
+                )
+                coupon.increment_usage()
+
+            # Clear cart
             cart_items.delete()
 
         return Response(
@@ -93,7 +156,10 @@ class CreateOrderAPIView(APIView):
                 "message": "Order created successfully",
                 "order_id": order.id,
                 "status": order.status,
-                "total_price": order.total_price,
+                "subtotal": str(order.subtotal),
+                "discount_amount": str(order.discount_amount),
+                "coupon_code": order.coupon_code,
+                "total_price": str(order.total_price),
             },
             status=status.HTTP_201_CREATED,
         )

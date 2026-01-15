@@ -1,4 +1,5 @@
 from rest_framework import generics
+from django.db.models import Q, Avg
 from drf_spectacular.utils import (
     OpenApiExample,
     OpenApiParameter,
@@ -54,18 +55,50 @@ class CategoryListAPIView(generics.ListAPIView):
     tags=["Menu"],
     summary="List available products",
     description=(
-        "Public endpoint. Returns available products.\n\n"
-        "Optional filter:\n"
-        "- `category_id`: Filter products by category"
+        "Public endpoint. Returns available products with search and filtering.\n\n"
+        "**Search & Filters:**\n"
+        "- `search`: Search by product name or description\n"
+        "- `category_id`: Filter by category\n"
+        "- `min_price`: Minimum price filter\n"
+        "- `max_price`: Maximum price filter\n"
+        "- `sort_by`: Sort results (price_asc, price_desc, name, newest)\n"
     ),
     parameters=[
+        OpenApiParameter(
+            name="search",
+            required=False,
+            type=str,
+            location=OpenApiParameter.QUERY,
+            description="Search products by name or description",
+        ),
         OpenApiParameter(
             name="category_id",
             required=False,
             type=int,
             location=OpenApiParameter.QUERY,
             description="Filter products by category id",
-        )
+        ),
+        OpenApiParameter(
+            name="min_price",
+            required=False,
+            type=float,
+            location=OpenApiParameter.QUERY,
+            description="Minimum price filter",
+        ),
+        OpenApiParameter(
+            name="max_price",
+            required=False,
+            type=float,
+            location=OpenApiParameter.QUERY,
+            description="Maximum price filter",
+        ),
+        OpenApiParameter(
+            name="sort_by",
+            required=False,
+            type=str,
+            location=OpenApiParameter.QUERY,
+            description="Sort by: price_asc, price_desc, name, newest (default)",
+        ),
     ],
     responses={
         200: ProductSerializer(many=True),
@@ -93,20 +126,54 @@ class ProductListAPIView(generics.ListAPIView):
     """
     Public API (API Key or JWT)
 
-    Returns a list of available products.
+    Returns a list of available products with search and advanced filtering.
     """
 
     serializer_class = ProductSerializer
     permission_classes = [ReadWithAPIKeyWriteWithJWT]
 
     def get_queryset(self):
-        queryset = Product.objects.filter(is_available=True)
+        queryset = Product.objects.filter(is_available=True).select_related("category")
 
+        # Search by name or description
+        search = self.request.query_params.get("search")
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) | Q(description__icontains=search)
+            )
+
+        # Filter by category
         category_id = self.request.query_params.get("category_id")
         if category_id:
             queryset = queryset.filter(category__id=category_id)
 
-        return queryset.order_by("created_at")
+        # Filter by price range
+        min_price = self.request.query_params.get("min_price")
+        if min_price:
+            try:
+                queryset = queryset.filter(price__gte=float(min_price))
+            except ValueError:
+                pass
+
+        max_price = self.request.query_params.get("max_price")
+        if max_price:
+            try:
+                queryset = queryset.filter(price__lte=float(max_price))
+            except ValueError:
+                pass
+
+        # Sorting
+        sort_by = self.request.query_params.get("sort_by", "newest")
+        if sort_by == "price_asc":
+            queryset = queryset.order_by("price")
+        elif sort_by == "price_desc":
+            queryset = queryset.order_by("-price")
+        elif sort_by == "name":
+            queryset = queryset.order_by("name")
+        else:  # newest (default)
+            queryset = queryset.order_by("-created_at")
+
+        return queryset
 
 
 # --------------------------------------------------

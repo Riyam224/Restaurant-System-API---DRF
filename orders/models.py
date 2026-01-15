@@ -16,11 +16,34 @@ class Order(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
 
+    # Pricing
+    subtotal = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        editable=False,
+        help_text="Order subtotal before discount"
+    )
+    discount_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        editable=False,
+        help_text="Discount applied from coupon"
+    )
     total_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0,
         editable=False,
+        help_text="Final price after discount"
+    )
+
+    # Coupon
+    coupon_code = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Coupon code used (if any)"
     )
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
