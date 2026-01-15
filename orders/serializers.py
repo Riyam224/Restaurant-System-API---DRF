@@ -1,5 +1,6 @@
 from decimal import Decimal
 from rest_framework import serializers
+from addresses.serializers import AddressDetailSerializer
 from .models import Order, OrderItem, OrderStatusHistory
 
 
@@ -25,6 +26,7 @@ class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     history = serializers.SerializerMethodField()
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+    address = AddressDetailSerializer(read_only=True)
 
     def get_history(self, obj):
         request = self.context.get("request")
