@@ -33,10 +33,7 @@ class Order(models.Model):
         ],
         default="pending",
     )
-    address = models.ForeignKey(
-        "addresses.Address",
-        on_delete=models.PROTECT,
-    )
+    address = models.ForeignKey("addresses.Address", on_delete=models.PROTECT)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
