@@ -206,25 +206,24 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 # --------------------------------------------------
-# DATABASE (FINAL FIX)
+# DATABASE
 # --------------------------------------------------
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-if DATABASE_URL:
-    DATABASES = {
-        "default": dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=True,
-        )
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not set")
+
+# Parse database config - only use SSL for PostgreSQL
+db_config = dj_database_url.config(
+    default=DATABASE_URL,
+    conn_max_age=600,
+)
+
+# Add SSL requirement only for PostgreSQL
+if db_config.get("ENGINE") == "django.db.backends.postgresql":
+    db_config["OPTIONS"] = {"sslmode": "require"}
+
+DATABASES = {"default": db_config}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
