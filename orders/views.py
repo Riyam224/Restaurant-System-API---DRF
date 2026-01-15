@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
@@ -14,7 +15,7 @@ from drf_spectacular.utils import (
 from core.permissions import IsAdminUserJWT, IsAuthenticatedJWT
 from cart.models import CartItem
 from addresses.models import Address
-from .models import Order, OrderItem, OrderStatusHistory
+from .models import Order, OrderItem
 from .serializers import OrderSerializer
 
 
@@ -73,22 +74,19 @@ class CreateOrderAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        order = Order.objects.create(user=user, address=address)
-        OrderStatusHistory.objects.create(order=order, status=order.status)
+        with transaction.atomic():
+            order = Order.objects.create(user=user, address=address)
 
-        for item in cart_items:
-            OrderItem.objects.create(
-                order=order,
-                product_id=item.product.id,
-                product_name=item.product.name,
-                price=item.product.price,
-                quantity=item.quantity,
-            )
+            for item in cart_items:
+                OrderItem.objects.create(
+                    order=order,
+                    product_id=item.product.id,
+                    product_name=item.product.name,
+                    price=item.product.price,
+                    quantity=item.quantity,
+                )
 
-        # Recalculate total AFTER items are created
-        order.save()
-
-        cart_items.delete()
+            cart_items.delete()
 
         return Response(
             {
@@ -298,7 +296,6 @@ class UpdateOrderStatusAPIView(APIView):
 
         order.status = serializer.validated_data["status"]
         order.save()
-        OrderStatusHistory.objects.create(order=order, status=order.status)
 
         return Response(
             {

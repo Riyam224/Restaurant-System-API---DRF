@@ -45,11 +45,18 @@ class Order(models.Model):
         ordering = ["-created_at"]
 
     def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        is_create = self.pk is None
+        old_status = None
+        if not is_create and (update_fields is None or "status" in update_fields):
+            old_status = (
+                Order.objects.filter(pk=self.pk)
+                .values_list("status", flat=True)
+                .first()
+            )
         super().save(*args, **kwargs)
-        total = sum(item.price * item.quantity for item in self.items.all())
-        if self.total_price != total:
-            self.total_price = total
-            super().save(update_fields=["total_price"])
+        if is_create or (old_status is not None and old_status != self.status):
+            OrderStatusHistory.objects.create(order=self, status=self.status)
 
     def __str__(self):
         return f"Order #{self.id} - {self.user}"
@@ -67,6 +74,24 @@ class OrderItem(models.Model):
 
     def subtotal(self):
         return self.price * self.quantity
+
+    def update_order_total(self):
+        total = sum(item.price * item.quantity for item in self.order.items.all())
+        if self.order.total_price != total:
+            self.order.total_price = total
+            self.order.save(update_fields=["total_price"])
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.update_order_total()
+
+    def delete(self, *args, **kwargs):
+        order = self.order
+        super().delete(*args, **kwargs)
+        total = sum(item.price * item.quantity for item in order.items.all())
+        if order.total_price != total:
+            order.total_price = total
+            order.save(update_fields=["total_price"])
 
     def __str__(self):
         return f"{self.product_name} x {self.quantity}"
