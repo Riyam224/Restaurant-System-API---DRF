@@ -296,6 +296,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # Local apps
     "accounts",
+    "addresses",
     "menu",
     "cart",
     "orders",

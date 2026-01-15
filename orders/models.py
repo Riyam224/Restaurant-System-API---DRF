@@ -19,14 +19,23 @@ class Order(models.Model):
     total_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=0,        # ✅ IMPORTANT
-        blank=True        # ✅ IMPORTANT
+        default=0,
+        editable=False,
     )
 
-    status = models.CharField(
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    payment_status = models.CharField(
         max_length=20,
-        choices=STATUS_CHOICES,
-        default="pending"
+        choices=[
+            ("pending", "Pending"),
+            ("paid", "Paid"),
+            ("failed", "Failed"),
+        ],
+        default="pending",
+    )
+    address = models.ForeignKey(
+        "addresses.Address",
+        on_delete=models.PROTECT,
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -35,13 +44,12 @@ class Order(models.Model):
     class Meta:
         ordering = ["-created_at"]
 
-    def calculate_total_price(self):
-        return sum(item.subtotal() for item in self.items.all())
-
     def save(self, *args, **kwargs):
-        # Always recalculate before saving
-        self.total_price = self.calculate_total_price()
         super().save(*args, **kwargs)
+        total = sum(item.price * item.quantity for item in self.items.all())
+        if self.total_price != total:
+            self.total_price = total
+            super().save(update_fields=["total_price"])
 
     def __str__(self):
         return f"Order #{self.id} - {self.user}"
@@ -62,3 +70,9 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product_name} x {self.quantity}"
+
+
+class OrderStatusHistory(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="history")
+    status = models.CharField(max_length=20, choices=Order.STATUS_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)

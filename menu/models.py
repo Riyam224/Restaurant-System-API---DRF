@@ -35,6 +35,7 @@ class Product(models.Model):
     image = models.URLField(_("product image"), max_length=200, blank=True, null=True)
     is_available = models.BooleanField(default=True, verbose_name=_("is available"))
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name

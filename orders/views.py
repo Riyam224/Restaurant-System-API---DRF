@@ -13,7 +13,8 @@ from drf_spectacular.utils import (
 
 from core.permissions import IsAdminUserJWT, IsAuthenticatedJWT
 from cart.models import CartItem
-from .models import Order, OrderItem
+from addresses.models import Address
+from .models import Order, OrderItem, OrderStatusHistory
 from .serializers import OrderSerializer
 
 
@@ -21,7 +22,12 @@ from .serializers import OrderSerializer
     tags=["Orders"],
     summary="Create order from cart",
     description="Creates an order using the current user's cart items.",
-    request=None,
+    request=inline_serializer(
+        name="CreateOrderRequest",
+        fields={
+            "address_id": serializers.IntegerField(),
+        },
+    ),
     responses={
         201: OpenApiResponse(
             description="Order created",
@@ -52,6 +58,13 @@ class CreateOrderAPIView(APIView):
 
     def post(self, request):
         user = request.user
+        address_id = request.data.get("address_id")
+        if not address_id:
+            return Response(
+                {"detail": "address_id is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        address = get_object_or_404(Address, id=address_id, user=user)
         cart_items = CartItem.objects.filter(cart__user=user)
 
         if not cart_items.exists():
@@ -60,7 +73,8 @@ class CreateOrderAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        order = Order.objects.create(user=user)
+        order = Order.objects.create(user=user, address=address)
+        OrderStatusHistory.objects.create(order=order, status=order.status)
 
         for item in cart_items:
             OrderItem.objects.create(
@@ -157,52 +171,117 @@ class OrderDetailAPIView(RetrieveAPIView):
         return Order.objects.filter(user=self.request.user)
 
 
-@extend_schema(
-    tags=["Orders"],
-    summary="Update order status (admin)",
-    description="Admin-only endpoint. Updates order status.",
-    parameters=[
-        OpenApiParameter(
-            name="pk",
-            type=int,
-            location=OpenApiParameter.PATH,
-            description="Order ID",
-        )
-    ],
-    request=inline_serializer(
-        name="OrderStatusUpdateRequest",
-        fields={
-            "status": serializers.ChoiceField(
-                choices=[choice[0] for choice in Order.STATUS_CHOICES]
-            )
-        },
-    ),
-    responses={
-        200: OpenApiResponse(
-            description="Status updated",
-            examples=[
-                OpenApiExample(
-                    "Status Updated",
-                    value={"message": "Order status updated", "status": "preparing"},
-                    response_only=True,
-                )
-            ],
-        ),
-        400: OpenApiResponse(description="Invalid status"),
-        401: OpenApiResponse(
-            description="Authentication credentials were not provided."
-        ),
-        404: OpenApiResponse(description="Order not found"),
-    },
-)
 class UpdateOrderStatusAPIView(APIView):
     """
-    Admin API (JWT)
-    Updates order status.
+    Order status endpoint:
+    - GET: authenticated user (or admin) reads status
+    - PATCH: admin updates status
     """
 
-    permission_classes = [IsAdminUserJWT]
+    def get_permissions(self):
+        if self.request.method == "PATCH":
+            return [IsAdminUserJWT()]
+        return [IsAuthenticatedJWT()]
 
+    @extend_schema(
+        tags=["Orders"],
+        summary="Get order status",
+        description="Returns the current status and updated_at for an order.",
+        parameters=[
+            OpenApiParameter(
+                name="pk",
+                type=int,
+                location=OpenApiParameter.PATH,
+                description="Order ID",
+            )
+        ],
+        responses={
+            200: OpenApiResponse(
+                response=inline_serializer(
+                    name="OrderStatusResponse",
+                    fields={
+                        "order_id": serializers.IntegerField(),
+                        "status": serializers.ChoiceField(
+                            choices=[choice[0] for choice in Order.STATUS_CHOICES]
+                        ),
+                        "updated_at": serializers.DateTimeField(),
+                    },
+                ),
+                description="Order status",
+                examples=[
+                    OpenApiExample(
+                        "Order Status",
+                        value={
+                            "order_id": 12,
+                            "status": "on_the_way",
+                            "updated_at": "2026-01-14T12:30:00Z",
+                        },
+                        response_only=True,
+                    )
+                ],
+            ),
+            401: OpenApiResponse(
+                description="Authentication credentials were not provided."
+            ),
+            404: OpenApiResponse(description="Order not found"),
+        },
+    )
+    def get(self, request, pk):
+        if request.user.is_staff:
+            order = get_object_or_404(Order, pk=pk)
+        else:
+            order = get_object_or_404(Order, pk=pk, user=request.user)
+
+        return Response(
+            {
+                "order_id": order.id,
+                "status": order.status,
+                "updated_at": order.updated_at,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        tags=["Orders"],
+        summary="Update order status (admin)",
+        description="Admin-only endpoint. Updates order status.",
+        parameters=[
+            OpenApiParameter(
+                name="pk",
+                type=int,
+                location=OpenApiParameter.PATH,
+                description="Order ID",
+            )
+        ],
+        request=inline_serializer(
+            name="OrderStatusUpdateRequest",
+            fields={
+                "status": serializers.ChoiceField(
+                    choices=[choice[0] for choice in Order.STATUS_CHOICES]
+                )
+            },
+        ),
+        responses={
+            200: OpenApiResponse(
+                description="Status updated",
+                examples=[
+                    OpenApiExample(
+                        "Status Updated",
+                        value={
+                            "message": "Order status updated",
+                            "status": "preparing",
+                        },
+                        response_only=True,
+                    )
+                ],
+            ),
+            400: OpenApiResponse(description="Invalid status"),
+            401: OpenApiResponse(
+                description="Authentication credentials were not provided."
+            ),
+            404: OpenApiResponse(description="Order not found"),
+        },
+    )
     def patch(self, request, pk):
         order = get_object_or_404(Order, pk=pk)
 
@@ -219,6 +298,7 @@ class UpdateOrderStatusAPIView(APIView):
 
         order.status = serializer.validated_data["status"]
         order.save()
+        OrderStatusHistory.objects.create(order=order, status=order.status)
 
         return Response(
             {
