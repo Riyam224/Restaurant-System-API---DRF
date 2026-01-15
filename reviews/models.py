@@ -62,9 +62,7 @@ class Review(models.Model):
         ]
 
     def __str__(self):
-        return (
-            f"{self.user.get_username()} - Product {self.product_id} - {self.rating}★"
-        )
+        return f"{self.user.email} - Product {self.product_id} - {self.rating}★"
 
     @staticmethod
     def get_product_average_rating(product_id):
