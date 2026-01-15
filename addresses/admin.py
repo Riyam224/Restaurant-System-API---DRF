@@ -9,3 +9,7 @@ class AddressAdmin(admin.ModelAdmin):
     search_fields = ("user__username", "user__email", "label", "city", "street")
     readonly_fields = ("created_at",)
     ordering = ("-created_at",)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related("user")

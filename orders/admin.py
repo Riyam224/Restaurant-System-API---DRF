@@ -32,6 +32,10 @@ class OrderAdmin(admin.ModelAdmin):
     )
     inlines = [OrderItemInline]
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related("user", "address")
+
     # 🚫 Disable manual creation
     def has_add_permission(self, request):
         return False
