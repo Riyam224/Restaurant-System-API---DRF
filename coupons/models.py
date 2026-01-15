@@ -228,6 +228,7 @@ class CouponUsage(models.Model):
     )
 
     used_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-used_at"]

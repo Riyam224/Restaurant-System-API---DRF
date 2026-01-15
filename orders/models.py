@@ -1,6 +1,7 @@
 # Create your models here.
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -92,6 +93,9 @@ class OrderItem(models.Model):
 
     quantity = models.PositiveIntegerField()
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     def subtotal(self):
         return self.price * self.quantity
 
@@ -121,3 +125,4 @@ class OrderStatusHistory(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="history")
     status = models.CharField(max_length=20, choices=Order.STATUS_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

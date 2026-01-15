@@ -10,6 +10,7 @@ class Category(models.Model):
     image = models.URLField(_("category image"), max_length=200, blank=True, null=True)
     is_active = models.BooleanField(default=True, verbose_name=_("is active"))
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["name"]
