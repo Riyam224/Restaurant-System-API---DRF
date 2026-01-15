@@ -26,42 +26,26 @@ class Review(models.Model):
         (5, "5 - Excellent"),
     )
 
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="reviews"
-    )
-    product_id = models.IntegerField(
-        help_text="ID of the product being reviewed"
-    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reviews")
+    product_id = models.IntegerField(help_text="ID of the product being reviewed")
     order_id = models.IntegerField(
-        help_text="Order ID where this product was purchased",
-        null=True,
-        blank=True
+        help_text="Order ID where this product was purchased", null=True, blank=True
     )
 
     rating = models.PositiveSmallIntegerField(
         choices=RATING_CHOICES,
         validators=[MinValueValidator(1), MaxValueValidator(5)],
-        help_text="Rating from 1 (Poor) to 5 (Excellent)"
+        help_text="Rating from 1 (Poor) to 5 (Excellent)",
     )
-    comment = models.TextField(
-        blank=True,
-        help_text="Optional review comment"
-    )
+    comment = models.TextField(blank=True, help_text="Optional review comment")
 
     # Moderation
     is_verified_purchase = models.BooleanField(
-        default=False,
-        help_text="Whether this review is from a verified purchase"
+        default=False, help_text="Whether this review is from a verified purchase"
     )
-    is_approved = models.BooleanField(
-        default=True,
-        help_text="Admin approval status"
-    )
+    is_approved = models.BooleanField(default=True, help_text="Admin approval status")
     moderation_note = models.TextField(
-        blank=True,
-        help_text="Internal note for moderation"
+        blank=True, help_text="Internal note for moderation"
     )
 
     # Timestamps
@@ -78,25 +62,22 @@ class Review(models.Model):
         ]
 
     def __str__(self):
-        username = getattr(self.user, "username", "User")
-        return f"Review #{self.id} • {username} • {self.rating}★"
+        return (
+            f"{self.user.get_username()} - Product {self.product_id} - {self.rating}★"
+        )
 
     @staticmethod
     def get_product_average_rating(product_id):
         """Calculate average rating for a specific product."""
         result = Review.objects.filter(
-            product_id=product_id,
-            is_approved=True
+            product_id=product_id, is_approved=True
         ).aggregate(avg_rating=Avg("rating"))
         return round(result["avg_rating"], 2) if result["avg_rating"] else None
 
     @staticmethod
     def get_product_rating_distribution(product_id):
         """Get rating distribution for a product (count per rating)."""
-        reviews = Review.objects.filter(
-            product_id=product_id,
-            is_approved=True
-        )
+        reviews = Review.objects.filter(product_id=product_id, is_approved=True)
 
         distribution = {
             "5": reviews.filter(rating=5).count(),
@@ -119,18 +100,12 @@ class ReviewHelpfulness(models.Model):
     """
 
     review = models.ForeignKey(
-        Review,
-        on_delete=models.CASCADE,
-        related_name="helpfulness_votes"
+        Review, on_delete=models.CASCADE, related_name="helpfulness_votes"
     )
     user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="review_votes"
+        User, on_delete=models.CASCADE, related_name="review_votes"
     )
-    is_helpful = models.BooleanField(
-        help_text="True if helpful, False if not helpful"
-    )
+    is_helpful = models.BooleanField(help_text="True if helpful, False if not helpful")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -138,5 +113,7 @@ class ReviewHelpfulness(models.Model):
         verbose_name_plural = "Review helpfulness votes"
 
     def __str__(self):
-        username = getattr(self.user, "username", "User")
-        return f"Vote #{self.id} by {username}"
+        helpful_text = "helpful" if self.is_helpful else "not helpful"
+        return (
+            f"{self.user.get_username()} found review #{self.review.id} {helpful_text}"
+        )
