@@ -1,0 +1,616 @@
+/* =========================================
+   Restaurant Admin - Custom Modern Styling
+   ========================================= */
+
+/* ====================
+   Color Scheme - Modern & Clean
+   ==================== */
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --success-color: #27ae60;
+    --warning-color: #f39c12;
+    --danger-color: #e74c3c;
+    --light-bg: #f8f9fa;
+    --card-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    --card-shadow-hover: 0 4px 8px rgba(0,0,0,0.15);
+    --border-radius: 8px;
+    --transition: all 0.3s ease;
+}
+
+/* ====================
+   Global Styles
+   ==================== */
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #2c3e50;
+}
+
+/* ====================
+   Main Content Area
+   ==================== */
+.content-wrapper {
+    background-color: var(--light-bg);
+    padding: 20px;
+    min-height: calc(100vh - 57px);
+}
+
+/* ====================
+   Dashboard Cards - Clean & Modern
+   ==================== */
+.small-box {
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    transition: var(--transition);
+    border: none;
+    overflow: hidden;
+}
+
+.small-box:hover {
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-2px);
+}
+
+.small-box .inner {
+    padding: 20px;
+}
+
+.small-box h3 {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+}
+
+.small-box p {
+    font-size: 14px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.small-box .icon {
+    font-size: 70px;
+    opacity: 0.15;
+}
+
+.small-box-footer {
+    background-color: rgba(0,0,0,0.05);
+    padding: 10px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.small-box-footer:hover {
+    background-color: rgba(0,0,0,0.1);
+}
+
+/* ====================
+   Info Boxes - Cleaner Design
+   ==================== */
+.info-box {
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border: none;
+    transition: var(--transition);
+    margin-bottom: 20px;
+}
+
+.info-box:hover {
+    box-shadow: var(--card-shadow-hover);
+}
+
+.info-box-icon {
+    border-radius: var(--border-radius) 0 0 var(--border-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.info-box-content {
+    padding: 15px;
+}
+
+.info-box-text {
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #7f8c8d;
+}
+
+.info-box-number {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+/* ====================
+   Card Boxes - Modern & Minimal
+   ==================== */
+.card {
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border: none;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 2px solid var(--light-bg);
+    padding: 15px 20px;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.card-footer {
+    background-color: var(--light-bg);
+    padding: 12px 20px;
+    border-top: none;
+}
+
+/* ====================
+   Sidebar - Cleaner Navigation
+   ==================== */
+.main-sidebar {
+    box-shadow: 2px 0 6px rgba(0,0,0,0.05);
+}
+
+.nav-sidebar .nav-link {
+    border-radius: 6px;
+    margin: 2px 8px;
+    transition: var(--transition);
+}
+
+.nav-sidebar .nav-link:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+.nav-sidebar .nav-link.active {
+    background-color: var(--secondary-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.nav-sidebar .nav-icon {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+/* ====================
+   Top Navigation - Clean Header
+   ==================== */
+.main-header {
+    border-bottom: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.navbar-nav .nav-link {
+    transition: var(--transition);
+}
+
+.navbar-nav .nav-link:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+/* ====================
+   Buttons - Modern & Rounded
+   ==================== */
+.btn {
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    transition: var(--transition);
+    border: none;
+}
+
+.btn-primary {
+    background-color: var(--secondary-color);
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3);
+}
+
+.btn-success:hover {
+    background-color: #229954;
+    box-shadow: 0 4px 8px rgba(39, 174, 96, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+    box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-warning {
+    background-color: var(--warning-color);
+    box-shadow: 0 2px 4px rgba(243, 156, 18, 0.3);
+}
+
+.btn-warning:hover {
+    background-color: #e67e22;
+    box-shadow: 0 4px 8px rgba(243, 156, 18, 0.4);
+    transform: translateY(-1px);
+}
+
+/* ====================
+   Tables - Clean & Modern
+   ==================== */
+.table {
+    background-color: #fff;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.table thead th {
+    background-color: var(--light-bg);
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: #7f8c8d;
+    padding: 15px;
+}
+
+.table tbody tr {
+    transition: var(--transition);
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.table td {
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+
+/* ====================
+   Forms - Modern Input Styles
+   ==================== */
+.form-control {
+    border-radius: 6px;
+    border: 1px solid #dfe6e9;
+    padding: 10px 15px;
+    transition: var(--transition);
+}
+
+.form-control:focus {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.form-group label {
+    font-weight: 500;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+/* ====================
+   Badges - Cleaner Status Indicators
+   ==================== */
+.badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-primary {
+    background-color: var(--secondary-color);
+}
+
+.badge-success {
+    background-color: var(--success-color);
+}
+
+.badge-warning {
+    background-color: var(--warning-color);
+}
+
+.badge-danger {
+    background-color: var(--danger-color);
+}
+
+/* ====================
+   Alerts - Modern Notifications
+   ==================== */
+.alert {
+    border-radius: var(--border-radius);
+    border: none;
+    box-shadow: var(--card-shadow);
+    padding: 15px 20px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+/* ====================
+   Pagination - Modern Controls
+   ==================== */
+.pagination .page-link {
+    border-radius: 6px;
+    margin: 0 3px;
+    border: 1px solid #dfe6e9;
+    color: var(--primary-color);
+    transition: var(--transition);
+}
+
+.pagination .page-link:hover {
+    background-color: var(--secondary-color);
+    color: #fff;
+    border-color: var(--secondary-color);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+/* ====================
+   Brand Logo Area
+   ==================== */
+.brand-link {
+    padding: 15px;
+    font-size: 18px;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.brand-link:hover {
+    background-color: rgba(255,255,255,0.05);
+}
+
+/* ====================
+   User Panel - Modern Profile
+   ==================== */
+.user-panel {
+    padding: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.user-panel .image {
+    margin-right: 10px;
+}
+
+.user-panel img {
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.2);
+}
+
+/* ====================
+   Search Form - Clean Design
+   ==================== */
+.form-control-sidebar {
+    border-radius: 20px;
+    padding: 8px 15px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background-color: rgba(255,255,255,0.1);
+    color: #fff;
+}
+
+.form-control-sidebar:focus {
+    background-color: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.3);
+}
+
+/* ====================
+   Dashboard Welcome Section
+   ==================== */
+.content-header {
+    padding: 15px 0 30px 0;
+}
+
+.content-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin: 0;
+}
+
+.breadcrumb {
+    background-color: transparent;
+    margin: 0;
+    padding: 0;
+}
+
+.breadcrumb-item {
+    font-size: 13px;
+}
+
+.breadcrumb-item.active {
+    color: #7f8c8d;
+}
+
+/* ====================
+   Action Buttons in List View
+   ==================== */
+.btn-sm {
+    padding: 5px 12px;
+    font-size: 12px;
+}
+
+/* ====================
+   Loading Overlays
+   ==================== */
+.overlay {
+    border-radius: var(--border-radius);
+}
+
+/* ====================
+   Dropdown Menus
+   ==================== */
+.dropdown-menu {
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border: none;
+    padding: 8px 0;
+}
+
+.dropdown-item {
+    padding: 8px 20px;
+    transition: var(--transition);
+}
+
+.dropdown-item:hover {
+    background-color: var(--light-bg);
+}
+
+/* ====================
+   Modal Dialogs
+   ==================== */
+.modal-content {
+    border-radius: var(--border-radius);
+    border: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    background-color: var(--light-bg);
+    border-bottom: 2px solid #dee2e6;
+    padding: 20px;
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-footer {
+    background-color: var(--light-bg);
+    border-top: none;
+    padding: 15px 20px;
+}
+
+/* ====================
+   Responsive Adjustments
+   ==================== */
+@media (max-width: 768px) {
+    .content-wrapper {
+        padding: 15px;
+    }
+
+    .small-box h3 {
+        font-size: 24px;
+    }
+
+    .content-header h1 {
+        font-size: 22px;
+    }
+}
+
+/* ====================
+   Custom Scrollbar
+   ==================== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--light-bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+/* ====================
+   Animations
+   ==================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card, .small-box, .info-box {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* ====================
+   Status Colors for Orders
+   ==================== */
+.status-pending {
+    color: var(--warning-color);
+    font-weight: 600;
+}
+
+.status-confirmed {
+    color: var(--secondary-color);
+    font-weight: 600;
+}
+
+.status-preparing {
+    color: #9b59b6;
+    font-weight: 600;
+}
+
+.status-ready {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.status-completed {
+    color: #16a085;
+    font-weight: 600;
+}
+
+.status-cancelled {
+    color: var(--danger-color);
+    font-weight: 600;
+}

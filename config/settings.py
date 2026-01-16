@@ -358,11 +358,92 @@ os.makedirs(BASE_DIR / "logs", exist_ok=True)
 # JAZZMIN (Admin UI)
 # --------------------------------------------------
 JAZZMIN_SETTINGS = {
+    # Site branding
     "site_title": "Restaurant Admin",
     "site_header": "Restaurant System",
     "site_brand": "Restaurant Dashboard",
+    "site_logo": None,  # Add your logo path here
+    "site_logo_classes": "img-circle",
+    "site_icon": None,  # Add favicon path here
     "welcome_sign": "Welcome to Restaurant Admin",
     "copyright": "Restaurant API",
+
+    # UI Customization - Modern theme
     "show_sidebar": True,
     "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+
+    # Top Menu
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "View Site", "url": "/", "new_window": True},
+        {"model": "auth.User"},
+    ],
+
+    # User Menu
+    "usermenu_links": [
+        {"model": "auth.user"}
+    ],
+
+    # Side Menu
+    "show_ui_builder": False,
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {
+        "auth.user": "collapsible",
+        "auth.group": "vertical_tabs"
+    },
+
+    # Related Modal
+    "related_modal_active": True,
+
+    # Custom icons for models
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "menu.Product": "fas fa-utensils",
+        "menu.Category": "fas fa-list",
+        "orders.Order": "fas fa-shopping-cart",
+        "orders.OrderStatusHistory": "fas fa-history",
+        "cart.Cart": "fas fa-shopping-basket",
+        "cart.CartItem": "fas fa-cart-plus",
+        "coupons.Coupon": "fas fa-tag",
+        "coupons.CouponUsage": "fas fa-ticket-alt",
+        "addresses.Address": "fas fa-map-marker-alt",
+        "reviews.Review": "fas fa-star",
+        "reviews.ReviewHelpfulness": "fas fa-thumbs-up",
+    },
+
+    # Default icon for models
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+
+    # Custom Links
+    "custom_links": {},
+
+    # Custom CSS and JS
+    "custom_css": "admin/css/custom_admin.css",
+    "custom_js": None,
+
+    # UI Tweaks
+    "use_google_fonts_cdn": True,
+    "show_ui_builder": False,
+
+    # Theme
+    "theme": "flatly",  # Modern flat design theme
+
+    # Language
+    "language_chooser": False,
+
+    # Custom App Order - Organize sidebar navigation
+    "order_with_respect_to": [
+        "orders",
+        "menu",
+        "cart",
+        "coupons",
+        "addresses",
+        "reviews",
+        "auth",
+    ],
 }

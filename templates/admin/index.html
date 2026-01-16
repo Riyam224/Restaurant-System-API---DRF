@@ -1,0 +1,243 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static jazzmin %}
+
+{% block content %}
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">{{ site_header }}</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">Home</a></li>
+                        <li class="breadcrumb-item active">Dashboard</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <section class="content">
+        <div class="container-fluid">
+
+            <!-- Statistics Row -->
+            <div class="row">
+                <!-- Orders -->
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-info">
+                        <div class="inner">
+                            <h3>{{ orders_count|default:"0" }}</h3>
+                            <p>Total Orders</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <a href="{% url 'admin:orders_order_changelist' %}" class="small-box-footer">
+                            View Details <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Products -->
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-success">
+                        <div class="inner">
+                            <h3>{{ products_count|default:"0" }}</h3>
+                            <p>Products</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        <a href="{% url 'admin:menu_product_changelist' %}" class="small-box-footer">
+                            View Details <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Users -->
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h3>{{ users_count|default:"0" }}</h3>
+                            <p>Registered Users</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <a href="{% url 'admin:auth_user_changelist' %}" class="small-box-footer">
+                            View Details <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Revenue -->
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-danger">
+                        <div class="inner">
+                            <h3>${{ total_revenue|default:"0"|floatformat:2 }}</h3>
+                            <p>Total Revenue</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <a href="{% url 'admin:orders_order_changelist' %}" class="small-box-footer">
+                            View Details <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity Row -->
+            <div class="row">
+                <!-- Recent Orders -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header border-transparent">
+                            <h3 class="card-title"><i class="fas fa-shopping-cart mr-2"></i>Recent Orders</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table m-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>User</th>
+                                            <th>Status</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if recent_orders %}
+                                            {% for order in recent_orders %}
+                                            <tr>
+                                                <td><a href="{% url 'admin:orders_order_change' order.id %}">#{{ order.id }}</a></td>
+                                                <td>{{ order.user.email|truncatechars:25 }}</td>
+                                                <td>
+                                                    <span class="badge badge-{{ order.status|lower }}">
+                                                        {{ order.get_status_display }}
+                                                    </span>
+                                                </td>
+                                                <td>${{ order.total_price|floatformat:2 }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted">No recent orders</td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card-footer clearfix">
+                            <a href="{% url 'admin:orders_order_changelist' %}" class="btn btn-sm btn-info float-right">View All Orders</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-chart-pie mr-2"></i>Quick Statistics</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-box bg-light">
+                                        <span class="info-box-icon bg-success"><i class="fas fa-check-circle"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">Completed Orders</span>
+                                            <span class="info-box-number">{{ completed_orders|default:"0" }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-box bg-light">
+                                        <span class="info-box-icon bg-warning"><i class="fas fa-clock"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">Pending Orders</span>
+                                            <span class="info-box-number">{{ pending_orders|default:"0" }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="info-box bg-light">
+                                        <span class="info-box-icon bg-info"><i class="fas fa-box"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">Available Products</span>
+                                            <span class="info-box-number">{{ available_products|default:"0" }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-box bg-light">
+                                        <span class="info-box-icon bg-danger"><i class="fas fa-star"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">Reviews</span>
+                                            <span class="info-box-number">{{ reviews_count|default:"0" }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Row -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-bolt mr-2"></i>Quick Actions</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 col-sm-6 mb-3">
+                                    <a href="{% url 'admin:menu_product_add' %}" class="btn btn-success btn-block">
+                                        <i class="fas fa-plus-circle mr-2"></i>Add Product
+                                    </a>
+                                </div>
+                                <div class="col-md-3 col-sm-6 mb-3">
+                                    <a href="{% url 'admin:orders_order_changelist' %}" class="btn btn-info btn-block">
+                                        <i class="fas fa-list mr-2"></i>View Orders
+                                    </a>
+                                </div>
+                                <div class="col-md-3 col-sm-6 mb-3">
+                                    <a href="{% url 'admin:coupons_coupon_add' %}" class="btn btn-warning btn-block">
+                                        <i class="fas fa-tag mr-2"></i>Create Coupon
+                                    </a>
+                                </div>
+                                <div class="col-md-3 col-sm-6 mb-3">
+                                    <a href="{% url 'admin:auth_user_changelist' %}" class="btn btn-primary btn-block">
+                                        <i class="fas fa-users mr-2"></i>Manage Users
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -13,6 +13,7 @@ A comprehensive, production-grade restaurant ordering system built with Django R
 ## 📚 Documentation
 
 - **[English Documentation](#english-documentation)** - Complete English guide
+- **[Admin Panel Guide](docs/ADMIN_PANEL.md)** - Modern admin interface documentation
 - **[التوثيق العربي](docs/README_AR.md)** - الدليل الكامل باللغة العربية
 - **[Flutter Integration Guide](docs/FLUTTER_INTEGRATION.md)** - For mobile developers
 - **[Improvements Summary](docs/IMPROVEMENTS_SUMMARY.md)** - Latest changes & fixes
@@ -52,6 +53,7 @@ The Restaurant System API is a **production-ready RESTful backend** service desi
 - 🐛 **Bug Fixes** - All critical pricing and validation bugs fixed
 - 📱 **Flutter Guide** - Complete integration documentation
 - 🔐 **Enhanced Security** - Product availability validation
+- 🎨 **Modern Admin Panel** - Professional UI with dashboard statistics ([See Guide](docs/ADMIN_PANEL.md))
 
 ## Key Features
 
@@ -142,6 +144,16 @@ The Restaurant System API is a **production-ready RESTful backend** service desi
 - **HTTP Client Examples** - Ready-to-use Dart code
 - **Error Handling Patterns** - Best practices included
 - **Comprehensive API Docs** - Interactive Swagger UI
+
+#### 🎨 Modern Admin Panel (**NEW**)
+- **Dashboard Statistics** - Real-time metrics (Orders, Products, Users, Revenue)
+- **Custom Styling** - Professional design with Flatly theme
+- **Color-Coded Status** - Visual order status indicators
+- **Quick Actions** - Fast access to common tasks
+- **Custom Icons** - FontAwesome icons for all models
+- **Responsive Design** - Mobile-friendly admin interface
+- **Multiple Themes** - Choose from 10+ ready-to-use themes
+- **Easy Customization** - Simple color and logo changes
 
 ## Architecture
 
@@ -244,7 +256,7 @@ python manage.py runserver
 ### Access Points
 - **API Base**: http://localhost:8000/api/v1/
 - **Swagger UI**: http://localhost:8000/api/schema/swagger-ui/
-- **Admin Panel**: http://localhost:8000/admin/
+- **Admin Panel**: http://localhost:8000/admin/ ⭐ **[New Modern UI!](docs/ADMIN_PANEL.md)**
 - **ReDoc**: http://localhost:8000/api/schema/redoc/
 
 ### Quick Test
@@ -339,8 +351,8 @@ DELETE /api/v1/addresses/{id}/   - Delete address
 - **Swagger UI** - Interactive API docs
 - **ReDoc** - Alternative API documentation
 
-### Performance & Deployment
-- **django-jazzmin 3.0.1** - Modern admin interface
+### Admin Interface & Deployment
+- **django-jazzmin 3.0.1** - Modern admin interface with custom styling
 - **gunicorn 21.2.0** - WSGI HTTP server
 - **whitenoise 6.6.0** - Static file serving
 - **dj-database-url 2.1.0** - Database URL parsing
@@ -415,9 +427,20 @@ restaurant_system/
 │
 ├── core/                        # Core utilities
 │   ├── permissions.py          # Custom permissions
-│   └── cache.py                # NEW: Caching utilities
+│   ├── cache.py                # NEW: Caching utilities
+│   └── admin_dashboard.py      # NEW: Admin dashboard statistics
+│
+├── static/admin/                # NEW: Admin panel assets
+│   ├── css/
+│   │   ├── custom_admin.css    # Custom admin styling (700+ lines)
+│   │   └── theme-variants.css  # Optional theme variations
+│   └── img/                    # Logo and branding assets
+│
+├── templates/admin/             # NEW: Custom admin templates
+│   └── index.html              # Custom dashboard layout
 │
 ├── docs/                        # Documentation
+│   ├── ADMIN_PANEL.md          # NEW: Admin panel guide
 │   ├── README_AR.md            # NEW: Arabic documentation
 │   ├── FLUTTER_INTEGRATION.md  # NEW: Flutter guide
 │   ├── IMPROVEMENTS_SUMMARY.md # NEW: Changes summary
