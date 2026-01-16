@@ -12,6 +12,10 @@ from .views import (
     ProductPerformanceView,
     CouponPerformanceView,
     ReviewMetricsView,
+    # AI Insights views
+    WhatHappenedTodayView,
+    ExplainMetricView,
+    BusinessInsightsView,
 )
 
 app_name = 'analytics'
@@ -38,4 +42,9 @@ urlpatterns = [
 
     # Review analytics
     path('reviews/metrics/', ReviewMetricsView.as_view(), name='review-metrics'),
+
+    # AI Insights endpoints (Phase 2)
+    path('insights/today/', WhatHappenedTodayView.as_view(), name='what-happened-today'),
+    path('insights/explain/', ExplainMetricView.as_view(), name='explain-metric'),
+    path('insights/business/', BusinessInsightsView.as_view(), name='business-insights'),
 ]

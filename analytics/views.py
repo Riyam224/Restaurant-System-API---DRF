@@ -12,6 +12,7 @@ from django.utils import timezone
 
 from .queries import AnalyticsQueries
 from .permissions import IsAdminUser
+from .ai_insights import AIInsightsService
 from .serializers import (
     RevenueMetricsSerializer,
     DailyRevenueSerializer,
@@ -21,6 +22,10 @@ from .serializers import (
     CouponPerformanceSerializer,
     ReviewMetricsSerializer,
     DashboardKPIsSerializer,
+    # AI Insights serializers
+    DailySummarySerializer,
+    MetricExplanationSerializer,
+    BusinessInsightsSerializer,
 )
 
 
@@ -256,4 +261,175 @@ class ReviewMetricsView(APIView):
     def get(self, request):
         data = AnalyticsQueries.get_review_metrics()
         serializer = ReviewMetricsSerializer(data)
+        return Response(serializer.data)
+
+
+# ============================================================================
+# AI Insights Views (Phase 2)
+# ============================================================================
+
+class WhatHappenedTodayView(APIView):
+    """
+    Get AI-generated summary of "What happened today?"
+
+    Returns natural language explanation of today's performance.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    @extend_schema(
+        summary="What Happened Today?",
+        description=(
+            "Get AI-generated natural language summary of today's performance. "
+            "Admin only."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name='date',
+                type=OpenApiTypes.DATE,
+                location=OpenApiParameter.QUERY,
+                description='Date to summarize (YYYY-MM-DD). Default: today',
+                required=False
+            )
+        ],
+        responses={200: DailySummarySerializer},
+        tags=['AI Insights']
+    )
+    def get(self, request):
+        date_param = request.query_params.get('date')
+
+        # Parse date if provided
+        if date_param:
+            try:
+                date = timezone.make_aware(
+                    datetime.strptime(date_param, '%Y-%m-%d')
+                )
+            except ValueError:
+                return Response(
+                    {'error': 'Invalid date format. Use YYYY-MM-DD'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            date = timezone.now()
+
+        data = AIInsightsService.generate_daily_summary(date)
+        serializer = DailySummarySerializer(data)
+        return Response(serializer.data)
+
+
+class ExplainMetricView(APIView):
+    """
+    Get AI explanation for why a metric changed.
+
+    Returns natural language explanation of metric changes.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    @extend_schema(
+        summary="Explain Metric Change",
+        description=(
+            "Get AI-generated explanation for why a metric changed. "
+            "Provides natural language 'why' explanations. Admin only."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name='metric',
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description='Metric to explain (revenue, orders, users)',
+                required=True
+            ),
+            OpenApiParameter(
+                name='days',
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description='Period to analyze (default: 30)',
+                required=False
+            )
+        ],
+        responses={200: MetricExplanationSerializer},
+        tags=['AI Insights']
+    )
+    def get(self, request):
+        metric_name = request.query_params.get('metric')
+        days = int(request.query_params.get('days', 30))
+
+        if not metric_name:
+            return Response(
+                {'error': 'Metric parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate metric name
+        valid_metrics = ['revenue', 'orders', 'users']
+        if metric_name not in valid_metrics:
+            return Response(
+                {
+                    'error': f'Invalid metric. Must be one of: {", ".join(valid_metrics)}'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get current and previous period data
+        end_date = timezone.now()
+        start_date = end_date - timedelta(days=days)
+
+        current_metrics = AnalyticsQueries.get_dashboard_kpis(days=days)
+
+        # Extract the specific metric
+        if metric_name == 'revenue':
+            current_value = current_metrics['revenue']['current']
+            previous_value = current_metrics['revenue']['previous']
+        elif metric_name == 'orders':
+            current_value = current_metrics['orders']['current']
+            previous_value = current_metrics['orders']['previous']
+        else:  # users
+            current_value = current_metrics['active_users']
+            previous_value = current_metrics['total_users'] * 0.7  # Estimate
+
+        # Generate explanation
+        data = AIInsightsService.explain_metric_change(
+            metric_name, current_value, previous_value, days
+        )
+        serializer = MetricExplanationSerializer(data)
+        return Response(serializer.data)
+
+
+class BusinessInsightsView(APIView):
+    """
+    Get comprehensive AI business insights.
+
+    Returns opportunities, warnings, and recommendations in natural language.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    @extend_schema(
+        summary="Get Business Insights",
+        description=(
+            "Get comprehensive AI-generated business insights including "
+            "opportunities, warnings, and actionable recommendations. Admin only."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name='days',
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description='Period to analyze (default: 30)',
+                required=False
+            )
+        ],
+        responses={200: BusinessInsightsSerializer},
+        tags=['AI Insights']
+    )
+    def get(self, request):
+        days = int(request.query_params.get('days', 30))
+
+        # Validate days parameter
+        if days < 1 or days > 365:
+            return Response(
+                {'error': 'Days must be between 1 and 365'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        data = AIInsightsService.get_business_insights(days=days)
+        serializer = BusinessInsightsSerializer(data)
         return Response(serializer.data)

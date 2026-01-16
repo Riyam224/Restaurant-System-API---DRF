@@ -113,3 +113,52 @@ class DashboardKPIsSerializer(serializers.Serializer):
     active_users = serializers.IntegerField()
     conversion_rate = serializers.FloatField()
     order_status = OrderStatusSerializer(many=True)
+
+
+# AI Insights Serializers (Phase 2)
+
+class DailyMetricsSerializer(serializers.Serializer):
+    """Serializer for daily metrics."""
+    revenue = serializers.FloatField()
+    orders = serializers.IntegerField()
+    average_order_value = serializers.FloatField()
+
+
+class MetricChangesSerializer(serializers.Serializer):
+    """Serializer for metric changes."""
+    revenue_change = serializers.FloatField()
+    revenue_change_percentage = serializers.FloatField()
+    order_change = serializers.IntegerField()
+    order_change_percentage = serializers.FloatField()
+
+
+class DailySummarySerializer(serializers.Serializer):
+    """Serializer for AI-generated daily summary."""
+    date = serializers.CharField()
+    summary = serializers.CharField()
+    headline = serializers.CharField()
+    metrics = DailyMetricsSerializer()
+    changes = MetricChangesSerializer()
+    insights = serializers.ListField(child=serializers.CharField())
+
+
+class MetricExplanationSerializer(serializers.Serializer):
+    """Serializer for metric change explanation."""
+    metric = serializers.CharField()
+    trend = serializers.CharField()
+    change = serializers.FloatField()
+    change_percentage = serializers.FloatField()
+    explanation = serializers.CharField()
+    contributing_factors = serializers.ListField(child=serializers.CharField())
+    current_value = serializers.FloatField()
+    previous_value = serializers.FloatField()
+
+
+class BusinessInsightsSerializer(serializers.Serializer):
+    """Serializer for comprehensive business insights."""
+    period = serializers.CharField()
+    overview = serializers.CharField()
+    opportunities = serializers.ListField(child=serializers.CharField())
+    warnings = serializers.ListField(child=serializers.CharField())
+    recommendations = serializers.ListField(child=serializers.CharField())
+    kpis = DashboardKPIsSerializer()

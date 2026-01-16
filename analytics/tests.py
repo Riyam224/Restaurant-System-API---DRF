@@ -224,3 +224,114 @@ class AnalyticsEndpointsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('total_reviews', response.data)
         self.assertIn('average_rating', response.data)
+
+
+class AIInsightsTestCase(APITestCase):
+    """Test AI insights endpoints (Phase 2)."""
+
+    def setUp(self):
+        """Create admin user and test data."""
+        self.admin_user = User.objects.create_user(
+            username='admin',
+            password='admin123',
+            is_staff=True,
+            is_superuser=True
+        )
+        self.client.force_authenticate(user=self.admin_user)
+
+        # Create test user
+        self.user = User.objects.create_user(
+            username='testuser',
+            password='test123'
+        )
+
+        # Create address
+        self.address = Address.objects.create(
+            user=self.user,
+            label='Home',
+            street='123 Test St',
+            city='Test City',
+            building='Apt 1',
+            lat=40.7128,
+            lng=-74.0060
+        )
+
+        # Create some orders
+        for i in range(5):
+            Order.objects.create(
+                user=self.user,
+                address=self.address,
+                subtotal=Decimal('100.00'),
+                discount_amount=Decimal('10.00'),
+                total_price=Decimal('90.00'),
+                payment_status='paid',
+                status='delivered'
+            )
+
+    def test_what_happened_today_endpoint(self):
+        """Test 'What happened today?' endpoint."""
+        response = self.client.get('/api/v1/analytics/insights/today/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('summary', response.data)
+        self.assertIn('headline', response.data)
+        self.assertIn('metrics', response.data)
+        self.assertIn('insights', response.data)
+
+    def test_what_happened_with_date(self):
+        """Test 'What happened today?' with specific date."""
+        response = self.client.get('/api/v1/analytics/insights/today/?date=2026-01-15')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('date', response.data)
+
+    def test_explain_metric_revenue(self):
+        """Test metric explanation for revenue."""
+        response = self.client.get('/api/v1/analytics/insights/explain/?metric=revenue&days=30')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('explanation', response.data)
+        self.assertIn('trend', response.data)
+        self.assertIn('contributing_factors', response.data)
+        self.assertEqual(response.data['metric'], 'revenue')
+
+    def test_explain_metric_orders(self):
+        """Test metric explanation for orders."""
+        response = self.client.get('/api/v1/analytics/insights/explain/?metric=orders')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['metric'], 'orders')
+
+    def test_explain_metric_missing_param(self):
+        """Test metric explanation without metric parameter."""
+        response = self.client.get('/api/v1/analytics/insights/explain/')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_explain_metric_invalid(self):
+        """Test metric explanation with invalid metric."""
+        response = self.client.get('/api/v1/analytics/insights/explain/?metric=invalid')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_business_insights_endpoint(self):
+        """Test comprehensive business insights endpoint."""
+        response = self.client.get('/api/v1/analytics/insights/business/?days=30')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('overview', response.data)
+        self.assertIn('opportunities', response.data)
+        self.assertIn('warnings', response.data)
+        self.assertIn('recommendations', response.data)
+        self.assertIn('kpis', response.data)
+
+    def test_business_insights_invalid_days(self):
+        """Test business insights with invalid days parameter."""
+        response = self.client.get('/api/v1/analytics/insights/business/?days=500')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_ai_insights_permission_required(self):
+        """Test that AI insights require admin permission."""
+        # Create regular user
+        regular_user = User.objects.create_user(
+            username='regular',
+            password='test123',
+            is_staff=False
+        )
+        self.client.force_authenticate(user=regular_user)
+
+        response = self.client.get('/api/v1/analytics/insights/today/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
