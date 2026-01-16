@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Order, OrderItem
+from .models import Order, OrderItem, OrderStatusHistory
 
 
 class OrderItemInline(admin.TabularInline):
@@ -38,4 +38,18 @@ class OrderAdmin(admin.ModelAdmin):
 
     # 🚫 Disable manual creation
     def has_add_permission(self, request):
+        return False
+
+
+@admin.register(OrderStatusHistory)
+class OrderStatusHistoryAdmin(admin.ModelAdmin):
+    list_display = ("order", "status", "created_at")
+    list_filter = ("status", "created_at")
+    search_fields = ("order__id",)
+    readonly_fields = ("order", "status", "created_at", "updated_at")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False
