@@ -34,3 +34,8 @@ python-decouple==3.8
 uritemplate==4.1.1
 PyYAML==6.0.2
 inflection==0.5.1
+
+# Testing
+coverage==7.4.0
+factory-boy==3.3.0
+faker==22.0.0

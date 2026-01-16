@@ -7,9 +7,7 @@ from menu.serializers import ProductSerializer
 class CartItemSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField(source="product.id")
     name = serializers.CharField(source="product.name")
-    price = serializers.DecimalField(
-        source="product.price", max_digits=10, decimal_places=2
-    )
+    price = serializers.DecimalField(max_digits=10, decimal_places=2)
     subtotal = serializers.SerializerMethodField()
 
     class Meta:

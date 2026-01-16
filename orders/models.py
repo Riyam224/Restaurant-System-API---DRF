@@ -100,10 +100,12 @@ class OrderItem(models.Model):
         return self.price * self.quantity
 
     def update_order_total(self):
-        total = sum(item.price * item.quantity for item in self.order.items.all())
-        if self.order.total_price != total:
-            self.order.total_price = total
-            self.order.save(update_fields=["total_price"])
+        subtotal = sum(item.price * item.quantity for item in self.order.items.all())
+        if self.order.subtotal != subtotal:
+            # Update subtotal and recalculate total with discount
+            self.order.subtotal = subtotal
+            self.order.total_price = subtotal - self.order.discount_amount
+            self.order.save(update_fields=["subtotal", "total_price"])
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -112,10 +114,12 @@ class OrderItem(models.Model):
     def delete(self, *args, **kwargs):
         order = self.order
         super().delete(*args, **kwargs)
-        total = sum(item.price * item.quantity for item in order.items.all())
-        if order.total_price != total:
-            order.total_price = total
-            order.save(update_fields=["total_price"])
+        subtotal = sum(item.price * item.quantity for item in order.items.all())
+        if order.subtotal != subtotal:
+            # Update subtotal and recalculate total with discount
+            order.subtotal = subtotal
+            order.total_price = subtotal - order.discount_amount
+            order.save(update_fields=["subtotal", "total_price"])
 
     def __str__(self):
         return f"{self.product_name} x {self.quantity}"

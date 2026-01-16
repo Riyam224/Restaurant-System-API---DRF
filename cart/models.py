@@ -40,4 +40,4 @@ class CartItem(models.Model):
         return f"{self.product.name} x {self.quantity}"
 
     def subtotal(self):
-        return self.product.price * self.quantity
+        return self.price * self.quantity

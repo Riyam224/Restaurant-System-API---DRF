@@ -25,8 +25,25 @@ class OrderAdmin(admin.ModelAdmin):
     readonly_fields = (
         "user",
         "address",
+        "subtotal",
+        "discount_amount",
         "total_price",
+        "coupon_code",
         "payment_status",
+        "created_at",
+        "updated_at",
+    )
+
+    # Allow admins to only update the order status
+    fields = (
+        "user",
+        "address",
+        "status",  # ← Only editable field
+        "payment_status",
+        "subtotal",
+        "discount_amount",
+        "coupon_code",
+        "total_price",
         "created_at",
         "updated_at",
     )

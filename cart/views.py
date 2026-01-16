@@ -147,6 +147,14 @@ class AddToCartAPIView(APIView):
         quantity = serializer.validated_data["quantity"]
 
         product = get_object_or_404(Product, id=product_id)
+
+        # Check if product is available
+        if not product.is_available:
+            return Response(
+                {"detail": "This product is currently unavailable"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         cart, _ = Cart.objects.get_or_create(user=request.user)
 
         item, created = CartItem.objects.get_or_create(

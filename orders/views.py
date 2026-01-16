@@ -73,7 +73,7 @@ class CreateOrderAPIView(APIView):
             )
 
         address = get_object_or_404(Address, id=address_id, user=user)
-        cart_items = CartItem.objects.filter(cart__user=user)
+        cart_items = CartItem.objects.filter(cart__user=user).select_related("product")
 
         if not cart_items.exists():
             return Response(
@@ -81,8 +81,22 @@ class CreateOrderAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Calculate order subtotal
-        subtotal = sum(item.product.price * item.quantity for item in cart_items)
+        # Validate all products are available
+        unavailable_products = [
+            item.product.name
+            for item in cart_items
+            if not item.product.is_available
+        ]
+        if unavailable_products:
+            return Response(
+                {
+                    "detail": f"The following products are no longer available: {', '.join(unavailable_products)}"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Calculate order subtotal using snapshot prices from cart
+        subtotal = sum(item.price * item.quantity for item in cart_items)
 
         # Handle coupon if provided
         coupon = None
