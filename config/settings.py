@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "reviews",
     "coupons",
     "core",
+    "analytics",
 ]
 
 # --------------------------------------------------
@@ -413,6 +414,7 @@ JAZZMIN_SETTINGS = {
         "addresses.Address": "fas fa-map-marker-alt",
         "reviews.Review": "fas fa-star",
         "reviews.ReviewHelpfulness": "fas fa-thumbs-up",
+        "analytics": "fas fa-chart-line",
     },
 
     # Default icon for models
@@ -438,6 +440,7 @@ JAZZMIN_SETTINGS = {
 
     # Custom App Order - Organize sidebar navigation
     "order_with_respect_to": [
+        "analytics",
         "orders",
         "menu",
         "cart",
