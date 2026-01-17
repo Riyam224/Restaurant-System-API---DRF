@@ -51,8 +51,7 @@ def create_test_data():
     # Create category
     print("\n2. Creating product category...")
     category, created = Category.objects.get_or_create(
-        name='Test Category',
-        defaults={'description': 'Test category for analytics'}
+        name='Test Category'
     )
     if created:
         print("   ✅ Created category")

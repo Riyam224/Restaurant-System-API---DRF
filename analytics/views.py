@@ -433,3 +433,271 @@ class BusinessInsightsView(APIView):
         data = AIInsightsService.get_business_insights(days=days)
         serializer = BusinessInsightsSerializer(data)
         return Response(serializer.data)
+
+
+# ============================================================================
+# PHASE 3: ANOMALY DETECTION & SMART ALERTS
+# ============================================================================
+
+class AnomalyDetectionView(APIView):
+    """
+    Detect anomalies in restaurant operations.
+
+    Analyzes:
+    - Revenue spikes/drops
+    - Order volume anomalies
+    - Coupon abuse patterns
+    - User behavior anomalies
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    @extend_schema(
+        summary="Detect Operational Anomalies",
+        description=(
+            "Detect unusual patterns in restaurant operations including "
+            "revenue drops/spikes, coupon abuse, and order anomalies. "
+            "Returns prioritized list of detected anomalies with explanations. "
+            "Admin only."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name='days',
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description='Period to analyze (default: 7)',
+                required=False
+            ),
+            OpenApiParameter(
+                name='use_ai',
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                description='Use AI for explanations (requires Claude API key)',
+                required=False
+            )
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+        tags=['Anomaly Detection']
+    )
+    def get(self, request):
+        from analytics.anomaly_detection import AnomalyDetector
+        from analytics.anomaly_explainer import AnomalyExplainer
+
+        days = int(request.query_params.get('days', 7))
+        use_ai = request.query_params.get('use_ai', 'false').lower() == 'true'
+
+        # Validate days parameter
+        if days < 1 or days > 90:
+            return Response(
+                {'error': 'Days must be between 1 and 90'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Detect anomalies
+        anomalies = AnomalyDetector.detect_all_anomalies(days=days)
+
+        # Generate explanations
+        result = AnomalyExplainer.explain_all_anomalies(anomalies, use_ai=use_ai)
+
+        return Response(result)
+
+
+class AnomalySummaryView(APIView):
+    """
+    Get a summary of detected anomalies.
+
+    Provides counts by severity and type.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    @extend_schema(
+        summary="Get Anomaly Summary",
+        description=(
+            "Get a high-level summary of detected anomalies including "
+            "counts by severity (critical/warning/info) and type. "
+            "Admin only."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name='days',
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description='Period to analyze (default: 7)',
+                required=False
+            )
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+        tags=['Anomaly Detection']
+    )
+    def get(self, request):
+        from analytics.anomaly_detection import AnomalyDetector
+
+        days = int(request.query_params.get('days', 7))
+
+        if days < 1 or days > 90:
+            return Response(
+                {'error': 'Days must be between 1 and 90'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        summary = AnomalyDetector.get_anomaly_summary(days=days)
+        return Response(summary)
+
+
+class DailyDigestView(APIView):
+    """
+    Get a daily digest of anomalies (for notifications/emails).
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    @extend_schema(
+        summary="Get Daily Anomaly Digest",
+        description=(
+            "Get a formatted daily digest of anomalies suitable for "
+            "email notifications or dashboard alerts. Admin only."
+        ),
+        responses={200: OpenApiTypes.OBJECT},
+        tags=['Anomaly Detection']
+    )
+    def get(self, request):
+        from analytics.anomaly_detection import AnomalyDetector
+        from analytics.anomaly_explainer import generate_daily_digest
+
+        # Check last 24 hours
+        anomalies = AnomalyDetector.detect_all_anomalies(days=1)
+
+        digest_text = generate_daily_digest(anomalies)
+
+        return Response({
+            'date': timezone.now().date().isoformat(),
+            'anomaly_count': len(anomalies),
+            'has_critical': any(a['severity'] == 'critical' for a in anomalies),
+            'digest': digest_text,
+            'anomalies': anomalies
+        })
+
+
+# ============================================================================
+# PHASE 4: PREDICTIVE ANALYTICS
+# ============================================================================
+
+class PredictTomorrowView(APIView):
+    """
+    Predict tomorrow's order volume and revenue.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    @extend_schema(
+        summary="Predict Tomorrow's Orders",
+        description=(
+            "Predict tomorrow's order volume and revenue based on "
+            "historical patterns and recent trends. Admin only."
+        ),
+        responses={200: OpenApiTypes.OBJECT},
+        tags=['Predictions']
+    )
+    def get(self, request):
+        from analytics.predictions import PredictionEngine
+
+        prediction = PredictionEngine.predict_tomorrow_orders()
+        return Response(prediction)
+
+
+class PredictPromoTimesView(APIView):
+    """
+    Predict the best times to run promotions.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    @extend_schema(
+        summary="Predict Best Promotion Times",
+        description=(
+            "Analyze historical patterns to recommend the best days "
+            "for running promotions. Admin only."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name='days_ahead',
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description='Number of days to forecast (default: 7)',
+                required=False
+            )
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+        tags=['Predictions']
+    )
+    def get(self, request):
+        from analytics.predictions import PredictionEngine
+
+        days_ahead = int(request.query_params.get('days_ahead', 7))
+
+        if days_ahead < 1 or days_ahead > 30:
+            return Response(
+                {'error': 'Days ahead must be between 1 and 30'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        prediction = PredictionEngine.predict_best_promo_times(days_ahead=days_ahead)
+        return Response(prediction)
+
+
+class PredictInventoryRisksView(APIView):
+    """
+    Predict inventory risks and stock-out probabilities.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    @extend_schema(
+        summary="Predict Inventory Risks",
+        description=(
+            "Predict inventory stock-out risks based on current levels "
+            "and consumption patterns. Admin only."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name='days_ahead',
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description='Number of days to forecast (default: 7)',
+                required=False
+            )
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+        tags=['Predictions']
+    )
+    def get(self, request):
+        from analytics.predictions import PredictionEngine
+
+        days_ahead = int(request.query_params.get('days_ahead', 7))
+
+        if days_ahead < 1 or days_ahead > 30:
+            return Response(
+                {'error': 'Days ahead must be between 1 and 30'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        prediction = PredictionEngine.predict_inventory_risks(days_ahead=days_ahead)
+        return Response(prediction)
+
+
+class PredictionSummaryView(APIView):
+    """
+    Get comprehensive prediction summary for dashboard.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    @extend_schema(
+        summary="Get Prediction Summary",
+        description=(
+            "Get a comprehensive summary of all predictions including "
+            "tomorrow's forecast, promo recommendations, and inventory risks. "
+            "Admin only."
+        ),
+        responses={200: OpenApiTypes.OBJECT},
+        tags=['Predictions']
+    )
+    def get(self, request):
+        from analytics.predictions import PredictionEngine
+
+        summary = PredictionEngine.get_prediction_summary()
+        return Response(summary)
