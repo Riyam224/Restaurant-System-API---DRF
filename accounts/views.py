@@ -18,6 +18,8 @@ from .serializers import (
     ResetPasswordSerializer,
 )
 
+# todo - move to utils
+
 
 @extend_schema(
     tags=["Authentication"],
@@ -42,6 +44,7 @@ class RegisterAPIView(generics.CreateAPIView):
     Register a new user account with email and password.
     Username is auto-generated from email if not provided.
     """
+
     queryset = User.objects.all()
     permission_classes = [AllowAny]
     serializer_class = RegisterSerializer
@@ -56,9 +59,9 @@ class RegisterAPIView(generics.CreateAPIView):
                 "id": user.id,
                 "username": user.username,
                 "email": user.email,
-                "message": "Registration successful"
+                "message": "Registration successful",
             },
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -77,8 +80,8 @@ class RegisterAPIView(generics.CreateAPIView):
                         "user": {
                             "id": 1,
                             "username": "john",
-                            "email": "john@example.com"
-                        }
+                            "email": "john@example.com",
+                        },
                     },
                     response_only=True,
                 )
@@ -89,10 +92,7 @@ class RegisterAPIView(generics.CreateAPIView):
     examples=[
         OpenApiExample(
             "Login with Email",
-            value={
-                "email": "john@example.com",
-                "password": "SecurePass123!"
-            },
+            value={"email": "john@example.com", "password": "SecurePass123!"},
             request_only=True,
         ),
     ],
@@ -102,18 +102,19 @@ class LoginAPIView(APIView):
     Login with email (or username) and password.
     Returns JWT access and refresh tokens.
     """
+
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email_or_username = serializer.validated_data['email']
-        password = serializer.validated_data['password']
+        email_or_username = serializer.validated_data["email"]
+        password = serializer.validated_data["password"]
 
         # Try to find user by email or username
         user = None
-        if '@' in email_or_username:
+        if "@" in email_or_username:
             # It's an email
             try:
                 user = User.objects.get(email=email_or_username.lower())
@@ -125,26 +126,29 @@ class LoginAPIView(APIView):
             username = email_or_username
 
         # Authenticate user
-        user = authenticate(username=username if user is None else user.username, password=password)
+        user = authenticate(
+            username=username if user is None else user.username, password=password
+        )
 
         if user is None:
             return Response(
-                {"detail": "Invalid credentials"},
-                status=status.HTTP_401_UNAUTHORIZED
+                {"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
             )
 
         # Generate tokens
         refresh = RefreshToken.for_user(user)
 
-        return Response({
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
+        return Response(
+            {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                },
             }
-        })
+        )
 
 
 @extend_schema(
@@ -167,6 +171,7 @@ class RefreshTokenAPIView(TokenRefreshView):
     """
     Refresh access token using refresh token.
     """
+
     permission_classes = [AllowAny]
 
 
@@ -181,6 +186,7 @@ class ProfileAPIView(APIView):
     """
     Get current authenticated user profile.
     """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -199,7 +205,7 @@ class ProfileAPIView(APIView):
                     "Success Response",
                     value={
                         "message": "Verification code has been sent to your email.",
-                        "otp": "123456"
+                        "otp": "123456",
                     },
                     response_only=True,
                 )
@@ -223,13 +229,14 @@ class ForgotPasswordAPIView(APIView):
     Note: In production, send OTP via email service.
     For development, OTP is returned in the response.
     """
+
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data['email']
+        email = serializer.validated_data["email"]
         user = User.objects.get(email=email)
 
         # Create OTP
@@ -242,9 +249,9 @@ class ForgotPasswordAPIView(APIView):
             {
                 "message": "Verification code has been sent to your email.",
                 "otp": otp_obj.otp,  # Remove this in production!
-                "expires_in": "10 minutes"
+                "expires_in": "10 minutes",
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
 
 
@@ -257,7 +264,9 @@ class ForgotPasswordAPIView(APIView):
             examples=[
                 OpenApiExample(
                     "Success Response",
-                    value={"message": "Verification code is valid. You can now reset your password."},
+                    value={
+                        "message": "Verification code is valid. You can now reset your password."
+                    },
                     response_only=True,
                 )
             ],
@@ -267,10 +276,7 @@ class ForgotPasswordAPIView(APIView):
     examples=[
         OpenApiExample(
             "Verify OTP Request",
-            value={
-                "email": "john@example.com",
-                "otp": "123456"
-            },
+            value={"email": "john@example.com", "otp": "123456"},
             request_only=True,
         ),
     ],
@@ -280,6 +286,7 @@ class VerifyOTPAPIView(APIView):
     Step 2: Verify OTP code.
     Validates the 6-digit code sent to the user's email.
     """
+
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -288,7 +295,7 @@ class VerifyOTPAPIView(APIView):
 
         return Response(
             {"message": "Verification code is valid. You can now reset your password."},
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
 
 
@@ -315,7 +322,7 @@ class VerifyOTPAPIView(APIView):
                 "email": "john@example.com",
                 "otp": "123456",
                 "new_password": "NewSecurePass123!",
-                "confirm_password": "NewSecurePass123!"
+                "confirm_password": "NewSecurePass123!",
             },
             request_only=True,
         ),
@@ -326,15 +333,16 @@ class ResetPasswordAPIView(APIView):
     Step 3: Reset password.
     Updates user password after OTP verification.
     """
+
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = serializer.validated_data['user']
-        otp_obj = serializer.validated_data['otp_obj']
-        new_password = serializer.validated_data['new_password']
+        user = serializer.validated_data["user"]
+        otp_obj = serializer.validated_data["otp_obj"]
+        new_password = serializer.validated_data["new_password"]
 
         # Update password
         user.set_password(new_password)
@@ -346,5 +354,5 @@ class ResetPasswordAPIView(APIView):
 
         return Response(
             {"message": "Password has been reset successfully."},
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
