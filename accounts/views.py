@@ -1,67 +1,70 @@
-from django.shortcuts import render
-
-# Create your views here.
-from rest_framework import generics, serializers
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
+from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from django.contrib.auth.models import User
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
-from drf_spectacular.utils import (
-    OpenApiExample,
-    OpenApiResponse,
-    extend_schema,
-    inline_serializer,
-)
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 
-from .serializers import RegisterSerializer
+from .models import PasswordResetOTP
+from .serializers import (
+    RegisterSerializer,
+    LoginSerializer,
+    UserSerializer,
+    ForgotPasswordSerializer,
+    VerifyOTPSerializer,
+    ResetPasswordSerializer,
+)
 
 
 @extend_schema(
-    tags=["Accounts"],
+    tags=["Authentication"],
     request=RegisterSerializer,
     responses={
-        201: RegisterSerializer,
+        201: UserSerializer,
         400: OpenApiResponse(description="Validation error"),
     },
     examples=[
         OpenApiExample(
             "Register Request",
             value={
-                "username": "chef_ahmed",
-                "email": "ahmed@example.com",
-                "password": "P@ssw0rd!",
+                "email": "john@example.com",
+                "password": "SecurePass123!",
             },
             request_only=True,
-        ),
-        OpenApiExample(
-            "Register Response",
-            value={"id": 12, "username": "chef_ahmed", "email": "ahmed@example.com"},
-            response_only=True,
         ),
     ],
 )
 class RegisterAPIView(generics.CreateAPIView):
     """
-    POST /api/v1/auth/register
+    Register a new user account with email and password.
+    Username is auto-generated from email if not provided.
     """
-
     queryset = User.objects.all()
     permission_classes = [AllowAny]
     serializer_class = RegisterSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        return Response(
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "message": "Registration successful"
+            },
+            status=status.HTTP_201_CREATED
+        )
+
 
 @extend_schema(
-    tags=["Accounts"],
-    request=inline_serializer(
-        name="LoginRequest",
-        fields={
-            "username": serializers.CharField(),
-            "password": serializers.CharField(write_only=True),
-        },
-    ),
+    tags=["Authentication"],
+    request=LoginSerializer,
     responses={
         200: OpenApiResponse(
             description="JWT token pair",
@@ -69,39 +72,83 @@ class RegisterAPIView(generics.CreateAPIView):
                 OpenApiExample(
                     "Login Response",
                     value={
-                        "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                         "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "user": {
+                            "id": 1,
+                            "username": "john",
+                            "email": "john@example.com"
+                        }
                     },
                     response_only=True,
                 )
             ],
         ),
-        401: OpenApiResponse(
-            description="Invalid credentials",
-            examples=[
-                OpenApiExample(
-                    "Unauthorized",
-                    value={"detail": "No active account found with the given credentials"},
-                    response_only=True,
-                )
-            ],
-        ),
+        401: OpenApiResponse(description="Invalid credentials"),
     },
+    examples=[
+        OpenApiExample(
+            "Login with Email",
+            value={
+                "email": "john@example.com",
+                "password": "SecurePass123!"
+            },
+            request_only=True,
+        ),
+    ],
 )
-class LoginAPIView(TokenObtainPairView):
+class LoginAPIView(APIView):
     """
-    POST /api/v1/auth/login
+    Login with email (or username) and password.
+    Returns JWT access and refresh tokens.
     """
-
     permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email_or_username = serializer.validated_data['email']
+        password = serializer.validated_data['password']
+
+        # Try to find user by email or username
+        user = None
+        if '@' in email_or_username:
+            # It's an email
+            try:
+                user = User.objects.get(email=email_or_username.lower())
+                username = user.username
+            except User.DoesNotExist:
+                pass
+        else:
+            # It's a username
+            username = email_or_username
+
+        # Authenticate user
+        user = authenticate(username=username if user is None else user.username, password=password)
+
+        if user is None:
+            return Response(
+                {"detail": "Invalid credentials"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Generate tokens
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+            }
+        })
 
 
 @extend_schema(
-    tags=["Accounts"],
-    request=inline_serializer(
-        name="RefreshTokenRequest",
-        fields={"refresh": serializers.CharField()},
-    ),
+    tags=["Authentication"],
     responses={
         200: OpenApiResponse(
             description="New access token",
@@ -113,63 +160,191 @@ class LoginAPIView(TokenObtainPairView):
                 )
             ],
         ),
-        401: OpenApiResponse(
-            description="Invalid or expired token",
-            examples=[
-                OpenApiExample(
-                    "Invalid refresh token",
-                    value={"detail": "Token is invalid or expired", "code": "token_not_valid"},
-                    response_only=True,
-                )
-            ],
-        ),
+        401: OpenApiResponse(description="Invalid or expired refresh token"),
     },
 )
 class RefreshTokenAPIView(TokenRefreshView):
     """
-    POST /api/v1/auth/refresh
+    Refresh access token using refresh token.
     """
-
     permission_classes = [AllowAny]
 
 
 @extend_schema(
-    tags=["Accounts"],
+    tags=["User Profile"],
     responses={
-        200: inline_serializer(
-            name="ProfileResponse",
-            fields={
-                "id": serializers.IntegerField(),
-                "username": serializers.CharField(),
-                "email": serializers.EmailField(),
-            },
-        ),
-        401: OpenApiResponse(
-            description="Authentication required",
+        200: UserSerializer,
+        401: OpenApiResponse(description="Authentication required"),
+    },
+)
+class ProfileAPIView(APIView):
+    """
+    Get current authenticated user profile.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
+
+@extend_schema(
+    tags=["Password Reset"],
+    request=ForgotPasswordSerializer,
+    responses={
+        200: OpenApiResponse(
+            description="OTP sent to email",
             examples=[
                 OpenApiExample(
-                    "Unauthorized",
-                    value={"detail": "Authentication credentials were not provided."},
+                    "Success Response",
+                    value={
+                        "message": "Verification code has been sent to your email.",
+                        "otp": "123456"
+                    },
                     response_only=True,
                 )
             ],
         ),
+        400: OpenApiResponse(description="Email not found"),
     },
+    examples=[
+        OpenApiExample(
+            "Forgot Password Request",
+            value={"email": "john@example.com"},
+            request_only=True,
+        ),
+    ],
 )
-class ProfileAPIView(generics.RetrieveAPIView):
+class ForgotPasswordAPIView(APIView):
     """
-    GET /api/v1/profile
+    Step 1: Request password reset.
+    Sends a 6-digit OTP to the user's email.
+
+    Note: In production, send OTP via email service.
+    For development, OTP is returned in the response.
     """
+    permission_classes = [AllowAny]
 
-    permission_classes = [IsAuthenticated]
-    serializer_class = RegisterSerializer
+    def post(self, request):
+        serializer = ForgotPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-    def get(self, request):
-        user = request.user
+        email = serializer.validated_data['email']
+        user = User.objects.get(email=email)
+
+        # Create OTP
+        otp_obj = PasswordResetOTP.create_otp(user)
+
+        # In production: Send OTP via email
+        # send_email(user.email, f"Your password reset code is: {otp_obj.otp}")
+
         return Response(
             {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-            }
+                "message": "Verification code has been sent to your email.",
+                "otp": otp_obj.otp,  # Remove this in production!
+                "expires_in": "10 minutes"
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+@extend_schema(
+    tags=["Password Reset"],
+    request=VerifyOTPSerializer,
+    responses={
+        200: OpenApiResponse(
+            description="OTP verified successfully",
+            examples=[
+                OpenApiExample(
+                    "Success Response",
+                    value={"message": "Verification code is valid. You can now reset your password."},
+                    response_only=True,
+                )
+            ],
+        ),
+        400: OpenApiResponse(description="Invalid or expired OTP"),
+    },
+    examples=[
+        OpenApiExample(
+            "Verify OTP Request",
+            value={
+                "email": "john@example.com",
+                "otp": "123456"
+            },
+            request_only=True,
+        ),
+    ],
+)
+class VerifyOTPAPIView(APIView):
+    """
+    Step 2: Verify OTP code.
+    Validates the 6-digit code sent to the user's email.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = VerifyOTPSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        return Response(
+            {"message": "Verification code is valid. You can now reset your password."},
+            status=status.HTTP_200_OK
+        )
+
+
+@extend_schema(
+    tags=["Password Reset"],
+    request=ResetPasswordSerializer,
+    responses={
+        200: OpenApiResponse(
+            description="Password reset successful",
+            examples=[
+                OpenApiExample(
+                    "Success Response",
+                    value={"message": "Password has been reset successfully."},
+                    response_only=True,
+                )
+            ],
+        ),
+        400: OpenApiResponse(description="Validation error"),
+    },
+    examples=[
+        OpenApiExample(
+            "Reset Password Request",
+            value={
+                "email": "john@example.com",
+                "otp": "123456",
+                "new_password": "NewSecurePass123!",
+                "confirm_password": "NewSecurePass123!"
+            },
+            request_only=True,
+        ),
+    ],
+)
+class ResetPasswordAPIView(APIView):
+    """
+    Step 3: Reset password.
+    Updates user password after OTP verification.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = ResetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data['user']
+        otp_obj = serializer.validated_data['otp_obj']
+        new_password = serializer.validated_data['new_password']
+
+        # Update password
+        user.set_password(new_password)
+        user.save()
+
+        # Mark OTP as used
+        otp_obj.is_used = True
+        otp_obj.save()
+
+        return Response(
+            {"message": "Password has been reset successfully."},
+            status=status.HTTP_200_OK
         )
