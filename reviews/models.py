@@ -1,9 +1,7 @@
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Avg
-
-User = get_user_model()
 
 
 class Review(models.Model):
@@ -26,7 +24,11 @@ class Review(models.Model):
         (5, "5 - Excellent"),
     )
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reviews")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="reviews"
+    )
     product_id = models.IntegerField(help_text="ID of the product being reviewed")
     order_id = models.IntegerField(
         help_text="Order ID where this product was purchased", null=True, blank=True
@@ -101,7 +103,9 @@ class ReviewHelpfulness(models.Model):
         Review, on_delete=models.CASCADE, related_name="helpfulness_votes"
     )
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="review_votes"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="review_votes"
     )
     is_helpful = models.BooleanField(help_text="True if helpful, False if not helpful")
     created_at = models.DateTimeField(auto_now_add=True)

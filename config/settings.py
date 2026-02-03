@@ -71,6 +71,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+
+AUTH_USER_MODEL = "accounts.User"
 # --------------------------------------------------
 # SECURITY
 # --------------------------------------------------
@@ -353,6 +355,7 @@ LOGGING = {
 
 # Create logs directory if it doesn't exist
 import os
+
 os.makedirs(BASE_DIR / "logs", exist_ok=True)
 
 # --------------------------------------------------
@@ -368,39 +371,30 @@ JAZZMIN_SETTINGS = {
     "site_icon": None,  # Add favicon path here
     "welcome_sign": "Welcome to Restaurant Admin",
     "copyright": "Restaurant API",
-
     # Layout - Enable wide layout for full-width dashboard
     "layout": "wide",
-
     # UI Customization - Modern theme
     "show_sidebar": True,
     "navigation_expanded": True,
     "hide_apps": [],
     "hide_models": [],
-
     # Top Menu
     "topmenu_links": [
         {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "View Site", "url": "/", "new_window": True},
         {"model": "auth.User"},
     ],
-
     # User Menu
-    "usermenu_links": [
-        {"model": "auth.user"}
-    ],
-
+    "usermenu_links": [{"model": "auth.user"}],
     # Side Menu
     "show_ui_builder": False,
     "changeform_format": "horizontal_tabs",
     "changeform_format_overrides": {
         "auth.user": "collapsible",
-        "auth.group": "vertical_tabs"
+        "auth.group": "vertical_tabs",
     },
-
     # Related Modal
     "related_modal_active": True,
-
     # Custom icons for models
     "icons": {
         "auth": "fas fa-users-cog",
@@ -419,28 +413,21 @@ JAZZMIN_SETTINGS = {
         "reviews.ReviewHelpfulness": "fas fa-thumbs-up",
         "analytics": "fas fa-chart-line",
     },
-
     # Default icon for models
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",
-
     # Custom Links
     "custom_links": {},
-
     # Custom CSS and JS
     "custom_css": "admin/css/custom_admin.css",
     "custom_js": None,
-
     # UI Tweaks
     "use_google_fonts_cdn": True,
     "show_ui_builder": False,
-
     # Theme
     "theme": "flatly",  # Modern flat design theme
-
     # Language
     "language_chooser": False,
-
     # Custom App Order - Organize sidebar navigation
     "order_with_respect_to": [
         "analytics",

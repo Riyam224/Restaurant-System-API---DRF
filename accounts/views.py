@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import User
+
+# from django.contrib.auth.models import User
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -7,6 +8,9 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 from .models import PasswordResetOTP
 from .serializers import (

@@ -1,9 +1,7 @@
 # Create your models here.
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.utils import timezone
-
-User = get_user_model()
 
 
 class Order(models.Model):
@@ -15,7 +13,11 @@ class Order(models.Model):
         ("cancelled", "Cancelled"),
     )
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="orders"
+    )
 
     # Pricing
     subtotal = models.DecimalField(

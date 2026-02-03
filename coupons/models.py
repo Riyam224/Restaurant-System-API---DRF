@@ -1,10 +1,8 @@
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from decimal import Decimal
-
-User = get_user_model()
 
 
 class Coupon(models.Model):
@@ -88,7 +86,7 @@ class Coupon(models.Model):
         help_text="Whether coupon is restricted to specific users"
     )
     allowed_users = models.ManyToManyField(
-        User,
+        settings.AUTH_USER_MODEL,
         blank=True,
         related_name="exclusive_coupons",
         help_text="Users who can use this coupon (if user-specific)"
@@ -202,7 +200,7 @@ class CouponUsage(models.Model):
         related_name="usages"
     )
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="coupon_usages"
     )
