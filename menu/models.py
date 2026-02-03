@@ -22,7 +22,7 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
-
+# todo fix this 
 class Product(models.Model):
     category = models.ForeignKey(
         Category,
