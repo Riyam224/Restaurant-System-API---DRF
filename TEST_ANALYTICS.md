@@ -1,4 +1,4 @@
-# Testing Analytics - Quick Start Guide
+###  Testing Analytics - Quick Start Guide
 
 ## Prerequisites
 
