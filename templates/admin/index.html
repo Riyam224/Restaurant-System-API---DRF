@@ -4,6 +4,26 @@
 {% block extrastyle %}
 {{ block.super }}
 <style>
+    /* ===== FORCE FULL-WIDTH ADMIN DASHBOARD ===== */
+
+    /* Remove max-width constraints from Jazzmin */
+    .content-wrapper,
+    .content-wrapper > .content,
+    .content-wrapper > .content > .container-fluid {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    /* Ensure content spans remaining screen beside sidebar */
+    .layout-fixed .content-wrapper {
+        margin-left: var(--sidebar-width, 250px);
+    }
+
+    /* When sidebar is collapsed */
+    .sidebar-collapse .content-wrapper {
+        margin-left: 4.6rem !important;
+    }
+
     /* Full-screen dashboard styling */
     .content-wrapper {
         min-height: 100vh;
@@ -11,13 +31,20 @@
         padding: 0;
     }
 
+    /* Fix padding so it still looks clean */
     .content {
-        padding: 15px;
+        padding: 20px 24px !important;
     }
 
     .content-header {
-        padding: 10px 15px;
+        padding: 10px 24px;
         margin-bottom: 10px;
+    }
+
+    /* Ensure container-fluid is truly fluid */
+    .container-fluid {
+        padding-left: 15px;
+        padding-right: 15px;
     }
 
     /* Chart containers */
@@ -25,10 +52,12 @@
         position: relative;
         height: 300px;
         padding: 15px;
+        max-width: 100%;
     }
 
     .chart-container canvas {
         max-height: 280px;
+        width: 100% !important;
     }
 
     /* AI Insights styling */
@@ -84,6 +113,48 @@
     @media (max-width: 768px) {
         .chart-container {
             height: 250px;
+        }
+
+        .content {
+            padding: 15px !important;
+        }
+
+        .content-header {
+            padding: 10px 15px;
+        }
+    }
+
+    /* Large screen optimizations */
+    @media (min-width: 1400px) {
+        .chart-container {
+            height: 350px;
+        }
+
+        .chart-container canvas {
+            max-height: 330px;
+        }
+    }
+
+    /* Extra large screens */
+    @media (min-width: 1920px) {
+        .chart-container {
+            height: 400px;
+        }
+
+        .chart-container canvas {
+            max-height: 380px;
+        }
+
+        .content {
+            padding: 25px 40px !important;
+        }
+    }
+
+    /* Ensure cards don't get too wide on ultra-wide screens */
+    @media (min-width: 2560px) {
+        .content > .container-fluid {
+            max-width: 2400px;
+            margin: 0 auto;
         }
     }
 </style>

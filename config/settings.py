@@ -369,6 +369,9 @@ JAZZMIN_SETTINGS = {
     "welcome_sign": "Welcome to Restaurant Admin",
     "copyright": "Restaurant API",
 
+    # Layout - Enable wide layout for full-width dashboard
+    "layout": "wide",
+
     # UI Customization - Modern theme
     "show_sidebar": True,
     "navigation_expanded": True,
