@@ -1,6 +1,100 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static jazzmin %}
 
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Full-screen dashboard styling */
+    .content-wrapper {
+        min-height: 100vh;
+        margin: 0;
+        padding: 0;
+    }
+
+    .content {
+        padding: 15px;
+    }
+
+    .content-header {
+        padding: 10px 15px;
+        margin-bottom: 10px;
+    }
+
+    /* Chart containers */
+    .chart-container {
+        position: relative;
+        height: 300px;
+        padding: 15px;
+    }
+
+    .chart-container canvas {
+        max-height: 280px;
+    }
+
+    /* AI Insights styling */
+    .ai-insight-card {
+        border-left: 4px solid #17a2b8;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        transition: transform 0.2s;
+    }
+
+    .ai-insight-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .ai-insight-card .card-header {
+        background: rgba(255,255,255,0.1);
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+
+    /* Anomaly alerts */
+    .anomaly-alert {
+        border-left: 4px solid #dc3545;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.95; }
+    }
+
+    /* Stats cards enhancement */
+    .small-box {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .small-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+
+    /* Loading spinner */
+    .chart-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 280px;
+        font-size: 24px;
+        color: #6c757d;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .chart-container {
+            height: 250px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
 {% block content %}
 <div class="content-wrapper">
     <!-- Content Header (Page header) -->
@@ -30,8 +124,9 @@
                 <div class="col-lg-3 col-6">
                     <div class="small-box bg-info">
                         <div class="inner">
-                            <h3>{{ orders_count|default:"0" }}</h3>
+                            <h3 id="orders-count">{{ orders_count|default:"0" }}</h3>
                             <p>Total Orders</p>
+                            <small id="orders-growth" class="text-sm"></small>
                         </div>
                         <div class="icon">
                             <i class="fas fa-shopping-cart"></i>
@@ -46,8 +141,9 @@
                 <div class="col-lg-3 col-6">
                     <div class="small-box bg-success">
                         <div class="inner">
-                            <h3>{{ products_count|default:"0" }}</h3>
+                            <h3 id="products-count">{{ products_count|default:"0" }}</h3>
                             <p>Products</p>
+                            <small id="products-growth" class="text-sm"></small>
                         </div>
                         <div class="icon">
                             <i class="fas fa-utensils"></i>
@@ -62,8 +158,9 @@
                 <div class="col-lg-3 col-6">
                     <div class="small-box bg-warning">
                         <div class="inner">
-                            <h3>{{ users_count|default:"0" }}</h3>
+                            <h3 id="users-count">{{ users_count|default:"0" }}</h3>
                             <p>Registered Users</p>
+                            <small id="users-growth" class="text-sm"></small>
                         </div>
                         <div class="icon">
                             <i class="fas fa-user-plus"></i>
@@ -78,8 +175,9 @@
                 <div class="col-lg-3 col-6">
                     <div class="small-box bg-danger">
                         <div class="inner">
-                            <h3>${{ total_revenue|default:"0"|floatformat:2 }}</h3>
+                            <h3 id="revenue-count">${{ total_revenue|default:"0"|floatformat:2 }}</h3>
                             <p>Total Revenue</p>
+                            <small id="revenue-growth" class="text-sm"></small>
                         </div>
                         <div class="icon">
                             <i class="fas fa-chart-line"></i>
@@ -87,6 +185,166 @@
                         <a href="{% url 'admin:orders_order_changelist' %}" class="small-box-footer">
                             View Details <i class="fas fa-arrow-circle-right"></i>
                         </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Insights & Anomaly Detection Row -->
+            <div class="row">
+                <!-- AI Business Insights -->
+                <div class="col-md-8">
+                    <div class="card ai-insight-card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-brain mr-2"></i>AI-Powered Business Insights
+                            </h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool text-white" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="ai-insights-loading" class="text-center py-3">
+                                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                <p class="mt-2">AI analyzing your business data...</p>
+                            </div>
+                            <div id="ai-insights-content" style="display: none;">
+                                <!-- Overview -->
+                                <div class="mb-3">
+                                    <h5><i class="fas fa-chart-line mr-2"></i>Overview</h5>
+                                    <p id="ai-overview" class="mb-2"></p>
+                                </div>
+
+                                <!-- Opportunities -->
+                                <div class="mb-3">
+                                    <h5><i class="fas fa-lightbulb mr-2"></i>Opportunities</h5>
+                                    <ul id="ai-opportunities" class="list-unstyled"></ul>
+                                </div>
+
+                                <!-- Warnings -->
+                                <div class="mb-3">
+                                    <h5><i class="fas fa-exclamation-triangle mr-2"></i>Warnings</h5>
+                                    <ul id="ai-warnings" class="list-unstyled"></ul>
+                                </div>
+
+                                <!-- Recommendations -->
+                                <div>
+                                    <h5><i class="fas fa-magic mr-2"></i>Recommendations</h5>
+                                    <ul id="ai-recommendations" class="list-unstyled"></ul>
+                                </div>
+                            </div>
+                            <div id="ai-insights-error" style="display: none;" class="alert alert-warning">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <span id="ai-insights-error-msg"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Anomaly Detection -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header bg-danger">
+                            <h3 class="card-title text-white">
+                                <i class="fas fa-bell mr-2"></i>Anomaly Alerts
+                            </h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool text-white" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="anomaly-loading" class="text-center py-4">
+                                <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+                                <p class="mt-2 text-muted">Scanning for anomalies...</p>
+                            </div>
+                            <div id="anomaly-list" class="list-group list-group-flush" style="display: none;">
+                                <!-- Anomalies will be inserted here -->
+                            </div>
+                            <div id="anomaly-empty" style="display: none;" class="p-4 text-center text-muted">
+                                <i class="fas fa-check-circle fa-3x mb-2"></i>
+                                <p>No anomalies detected!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row">
+                <!-- Revenue Trend Chart -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-area mr-2"></i>Revenue Trend (Last 30 Days)
+                            </h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="revenue-chart-loading" class="chart-loading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                            <div class="chart-container" style="display: none;" id="revenue-chart-container">
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Status Breakdown -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-pie mr-2"></i>Order Status
+                            </h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="order-status-loading" class="chart-loading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                            <div class="chart-container" style="display: none;" id="order-status-container">
+                                <canvas id="orderStatusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Performance Chart -->
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-bar mr-2"></i>Top 10 Products Performance
+                            </h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="product-chart-loading" class="chart-loading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                            <div class="chart-container" style="display: none;" id="product-chart-container">
+                                <canvas id="productChart"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -240,4 +498,386 @@
         </div>
     </section>
 </div>
+
+{% block extrajs %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    // API Base URL
+    const API_BASE = '/api/v1/analytics';
+
+    // Fetch headers with authentication
+    const fetchOptions = {
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        credentials: 'same-origin'
+    };
+
+    // ==================== AI INSIGHTS ====================
+    async function loadAIInsights() {
+        try {
+            const response = await fetch(`${API_BASE}/insights/business/?days=30`, fetchOptions);
+            const data = await response.json();
+
+            if (response.ok) {
+                // Hide loading, show content
+                document.getElementById('ai-insights-loading').style.display = 'none';
+                document.getElementById('ai-insights-content').style.display = 'block';
+
+                // Populate overview
+                document.getElementById('ai-overview').textContent = data.overview || 'No insights available';
+
+                // Populate opportunities
+                const opportunitiesList = document.getElementById('ai-opportunities');
+                opportunitiesList.innerHTML = '';
+                (data.opportunities || []).forEach(opp => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${opp}`;
+                    li.className = 'mb-2';
+                    opportunitiesList.appendChild(li);
+                });
+
+                // Populate warnings
+                const warningsList = document.getElementById('ai-warnings');
+                warningsList.innerHTML = '';
+                (data.warnings || []).forEach(warn => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i>${warn}`;
+                    li.className = 'mb-2';
+                    warningsList.appendChild(li);
+                });
+
+                // Populate recommendations
+                const recommendationsList = document.getElementById('ai-recommendations');
+                recommendationsList.innerHTML = '';
+                (data.recommendations || []).forEach(rec => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<i class="fas fa-star mr-2"></i>${rec}`;
+                    li.className = 'mb-2';
+                    recommendationsList.appendChild(li);
+                });
+            } else {
+                throw new Error('Failed to load AI insights');
+            }
+        } catch (error) {
+            console.error('AI Insights error:', error);
+            document.getElementById('ai-insights-loading').style.display = 'none';
+            document.getElementById('ai-insights-error').style.display = 'block';
+            document.getElementById('ai-insights-error-msg').textContent =
+                'Unable to load AI insights. Please try again later.';
+        }
+    }
+
+    // ==================== ANOMALY DETECTION ====================
+    async function loadAnomalies() {
+        try {
+            const response = await fetch(`${API_BASE}/anomalies/detect/?days=7&use_ai=true`, fetchOptions);
+            const data = await response.json();
+
+            document.getElementById('anomaly-loading').style.display = 'none';
+
+            if (response.ok && data.length > 0) {
+                const anomalyList = document.getElementById('anomaly-list');
+                anomalyList.style.display = 'block';
+                anomalyList.innerHTML = '';
+
+                data.slice(0, 5).forEach(anomaly => {
+                    const severityClass = {
+                        'critical': 'danger',
+                        'warning': 'warning',
+                        'info': 'info'
+                    }[anomaly.severity] || 'secondary';
+
+                    const item = document.createElement('a');
+                    item.href = '#';
+                    item.className = `list-group-item list-group-item-action list-group-item-${severityClass}`;
+                    item.innerHTML = `
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${anomaly.type.replace('_', ' ')}</h6>
+                            <small>${new Date(anomaly.timestamp).toLocaleDateString()}</small>
+                        </div>
+                        <p class="mb-1 small">${anomaly.explanation || anomaly.description}</p>
+                        <small class="text-muted">${anomaly.metric}: ${anomaly.value}</small>
+                    `;
+                    anomalyList.appendChild(item);
+                });
+            } else {
+                document.getElementById('anomaly-empty').style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Anomaly detection error:', error);
+            document.getElementById('anomaly-loading').style.display = 'none';
+            document.getElementById('anomaly-empty').style.display = 'block';
+        }
+    }
+
+    // ==================== DASHBOARD KPIs (with growth) ====================
+    async function loadKPIs() {
+        try {
+            const response = await fetch(`${API_BASE}/dashboard/?days=30`, fetchOptions);
+            const data = await response.json();
+
+            if (response.ok) {
+                // Update growth indicators
+                if (data.revenue_growth) {
+                    const growthText = data.revenue_growth > 0 ?
+                        `<i class="fas fa-arrow-up"></i> +${data.revenue_growth.toFixed(1)}%` :
+                        `<i class="fas fa-arrow-down"></i> ${data.revenue_growth.toFixed(1)}%`;
+                    const growthClass = data.revenue_growth > 0 ? 'text-success' : 'text-danger';
+                    document.getElementById('revenue-growth').innerHTML =
+                        `<span class="${growthClass}">${growthText}</span>`;
+                }
+
+                if (data.orders_growth) {
+                    const growthText = data.orders_growth > 0 ?
+                        `<i class="fas fa-arrow-up"></i> +${data.orders_growth.toFixed(1)}%` :
+                        `<i class="fas fa-arrow-down"></i> ${data.orders_growth.toFixed(1)}%`;
+                    const growthClass = data.orders_growth > 0 ? 'text-success' : 'text-danger';
+                    document.getElementById('orders-growth').innerHTML =
+                        `<span class="${growthClass}">${growthText}</span>`;
+                }
+            }
+        } catch (error) {
+            console.error('KPIs error:', error);
+        }
+    }
+
+    // ==================== REVENUE TREND CHART ====================
+    async function loadRevenueChart() {
+        try {
+            const endDate = new Date().toISOString().split('T')[0];
+            const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+            const response = await fetch(
+                `${API_BASE}/revenue/daily/?start_date=${startDate}&end_date=${endDate}`,
+                fetchOptions
+            );
+            const data = await response.json();
+
+            document.getElementById('revenue-chart-loading').style.display = 'none';
+            document.getElementById('revenue-chart-container').style.display = 'block';
+
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: data.map(d => d.revenue),
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Revenue: $' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Revenue chart error:', error);
+            document.getElementById('revenue-chart-loading').innerHTML =
+                '<i class="fas fa-exclamation-triangle"></i> Unable to load chart';
+        }
+    }
+
+    // ==================== ORDER STATUS CHART ====================
+    async function loadOrderStatusChart() {
+        try {
+            const response = await fetch(`${API_BASE}/orders/status/`, fetchOptions);
+            const data = await response.json();
+
+            document.getElementById('order-status-loading').style.display = 'none';
+            document.getElementById('order-status-container').style.display = 'block';
+
+            const ctx = document.getElementById('orderStatusChart').getContext('2d');
+
+            // Prepare data
+            const labels = Object.keys(data);
+            const values = Object.values(data);
+
+            // Color scheme
+            const colors = [
+                'rgb(255, 99, 132)',
+                'rgb(54, 162, 235)',
+                'rgb(255, 205, 86)',
+                'rgb(75, 192, 192)',
+                'rgb(153, 102, 255)',
+                'rgb(255, 159, 64)'
+            ];
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels.map(l => l.replace('_', ' ').toUpperCase()),
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Order status chart error:', error);
+            document.getElementById('order-status-loading').innerHTML =
+                '<i class="fas fa-exclamation-triangle"></i> Unable to load chart';
+        }
+    }
+
+    // ==================== PRODUCT PERFORMANCE CHART ====================
+    async function loadProductChart() {
+        try {
+            const response = await fetch(`${API_BASE}/products/performance/`, fetchOptions);
+            const data = await response.json();
+
+            document.getElementById('product-chart-loading').style.display = 'none';
+            document.getElementById('product-chart-container').style.display = 'block';
+
+            const ctx = document.getElementById('productChart').getContext('2d');
+
+            // Get top 10 products
+            const top10 = data.slice(0, 10);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: top10.map(p => p.product_name),
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: top10.map(p => p.total_revenue),
+                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                        borderColor: 'rgb(54, 162, 235)',
+                        borderWidth: 2
+                    }, {
+                        label: 'Orders',
+                        data: top10.map(p => p.order_count),
+                        backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                        borderColor: 'rgb(255, 99, 132)',
+                        borderWidth: 2,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value;
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Revenue ($)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Order Count'
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Product chart error:', error);
+            document.getElementById('product-chart-loading').innerHTML =
+                '<i class="fas fa-exclamation-triangle"></i> Unable to load chart';
+        }
+    }
+
+    // ==================== INITIALIZE ALL ====================
+    loadKPIs();
+    loadAIInsights();
+    loadAnomalies();
+    loadRevenueChart();
+    loadOrderStatusChart();
+    loadProductChart();
+});
+</script>
+{% endblock %}
 {% endblock %}
