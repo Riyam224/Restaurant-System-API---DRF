@@ -17,7 +17,7 @@ urlpatterns = [
         name="api-root",
     ),
     path("admin/", admin.site.urls),
-    # APIs
+    # APIs v1
     path("api/v1/", include("accounts.urls")),
     path("api/v1/", include("menu.urls")),
     path("api/v1/", include("cart.urls")),
