@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.utils import timezone
 from decimal import Decimal
+from drf_spectacular.utils import extend_schema_field
 from .models import Coupon, CouponUsage
 
 
@@ -31,11 +32,13 @@ class CouponSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id"]
 
-    def get_is_valid(self, obj):
+    @extend_schema_field(serializers.BooleanField)
+    def get_is_valid(self, obj) -> bool:
         """Check if coupon is currently valid."""
         return obj.is_valid()
 
-    def get_usage_info(self, obj):
+    @extend_schema_field(serializers.DictField)
+    def get_usage_info(self, obj) -> dict:
         """Get usage statistics."""
         request = self.context.get("request")
         info = {

@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from decimal import Decimal
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -81,7 +82,7 @@ class CartAPIView(APIView):
             "quantity": serializers.IntegerField(
                 required=False,
                 default=1,
-                min_value=1,
+                min_value=Decimal("1"),
             ),
         },
     ),
@@ -136,7 +137,7 @@ class AddToCartAPIView(APIView):
                 "quantity": serializers.IntegerField(
                     required=False,
                     default=1,
-                    min_value=1,
+                    min_value=Decimal("1"),
                 ),
             },
             data=request.data,

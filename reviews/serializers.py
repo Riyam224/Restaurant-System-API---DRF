@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.utils import timezone
 from datetime import timedelta
+from drf_spectacular.utils import extend_schema_field
 from .models import Review, ReviewHelpfulness
 
 
@@ -42,15 +43,18 @@ class ReviewSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-    def get_helpful_count(self, obj):
+    @extend_schema_field(serializers.IntegerField)
+    def get_helpful_count(self, obj) -> int:
         """Count of users who found this review helpful."""
         return obj.helpfulness_votes.filter(is_helpful=True).count()
 
-    def get_not_helpful_count(self, obj):
+    @extend_schema_field(serializers.IntegerField)
+    def get_not_helpful_count(self, obj) -> int:
         """Count of users who found this review not helpful."""
         return obj.helpfulness_votes.filter(is_helpful=False).count()
 
-    def get_can_edit(self, obj):
+    @extend_schema_field(serializers.BooleanField)
+    def get_can_edit(self, obj) -> bool:
         """Check if user can edit this review (within 7 days)."""
         request = self.context.get("request")
         if not request or not request.user.is_authenticated:

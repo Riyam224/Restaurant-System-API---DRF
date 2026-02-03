@@ -1,5 +1,6 @@
 from decimal import Decimal
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from addresses.serializers import AddressDetailSerializer
 from .models import Order, OrderItem, OrderStatusHistory
 
@@ -28,7 +29,8 @@ class OrderSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     address = AddressDetailSerializer(read_only=True)
 
-    def get_history(self, obj):
+    @extend_schema_field(serializers.ListField)
+    def get_history(self, obj) -> list:
         request = self.context.get("request")
         if request and not request.user.is_staff and obj.user != request.user:
             return []
