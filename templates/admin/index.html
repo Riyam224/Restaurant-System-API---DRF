@@ -4,6 +4,12 @@
 {% block extrastyle %}
 {{ block.super }}
 <style>
+    /* ===== PREVENT HORIZONTAL SCROLL ===== */
+    html, body {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+    }
+
     /* ===== FORCE FULL-WIDTH ADMIN DASHBOARD ===== */
 
     /* Remove max-width constraints from Jazzmin */
@@ -12,6 +18,7 @@
     .content-wrapper > .content > .container-fluid {
         max-width: 100% !important;
         width: 100% !important;
+        overflow-x: hidden !important;
     }
 
     /* Ensure content spans remaining screen beside sidebar */
@@ -29,22 +36,39 @@
         min-height: 100vh;
         margin: 0;
         padding: 0;
+        box-sizing: border-box;
     }
 
     /* Fix padding so it still looks clean */
     .content {
         padding: 20px 24px !important;
+        box-sizing: border-box;
     }
 
     .content-header {
         padding: 10px 24px;
         margin-bottom: 10px;
+        box-sizing: border-box;
     }
 
     /* Ensure container-fluid is truly fluid */
     .container-fluid {
         padding-left: 15px;
         padding-right: 15px;
+        box-sizing: border-box;
+        overflow-x: hidden !important;
+    }
+
+    /* Prevent rows from overflowing */
+    .row {
+        margin-left: -15px;
+        margin-right: -15px;
+        box-sizing: border-box;
+    }
+
+    /* Ensure all columns fit properly */
+    [class*="col-"] {
+        box-sizing: border-box;
     }
 
     /* Chart containers */
@@ -121,6 +145,18 @@
 
         .content-header {
             padding: 10px 15px;
+        }
+
+        /* Ensure sidebar takes no space when collapsed on mobile */
+        .sidebar-collapse .content-wrapper {
+            margin-left: 0 !important;
+        }
+    }
+
+    /* Medium screens */
+    @media (max-width: 1200px) {
+        .content {
+            padding: 15px 20px !important;
         }
     }
 
