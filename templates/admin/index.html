@@ -23,7 +23,7 @@
 
     /* Ensure content spans remaining screen beside sidebar */
     .layout-fixed .content-wrapper {
-        margin-left: var(--sidebar-width, 250px);
+        margin-left: 250px !important;
     }
 
     /* When sidebar is collapsed */
@@ -34,36 +34,46 @@
     /* Full-screen dashboard styling */
     .content-wrapper {
         min-height: 100vh;
-        margin: 0;
-        padding: 0;
+        margin: 0 !important;
+        padding: 0 !important;
         box-sizing: border-box;
     }
 
     /* Fix padding so it still looks clean */
     .content {
-        padding: 20px 24px !important;
+        padding: 20px !important;
+        margin: 0 !important;
         box-sizing: border-box;
     }
 
     .content-header {
-        padding: 10px 24px;
-        margin-bottom: 10px;
+        padding: 15px 20px !important;
+        margin: 0 0 10px 0 !important;
         box-sizing: border-box;
     }
 
     /* Ensure container-fluid is truly fluid */
     .container-fluid {
-        padding-left: 15px;
-        padding-right: 15px;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin: 0 !important;
         box-sizing: border-box;
         overflow-x: hidden !important;
+        width: 100% !important;
     }
 
     /* Prevent rows from overflowing */
     .row {
-        margin-left: -15px;
-        margin-right: -15px;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
         box-sizing: border-box;
+        width: 100%;
+    }
+
+    /* Fix column padding */
+    .row > [class*="col-"] {
+        padding-left: 10px;
+        padding-right: 10px;
     }
 
     /* Ensure all columns fit properly */
