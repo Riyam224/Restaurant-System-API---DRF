@@ -1,8 +1,11 @@
 import os
+import traceback
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
+print("🔥🔥🔥 RUNNING create_superuser_if_not_exists COMMAND 🔥🔥🔥")
 
 
 class Command(BaseCommand):
@@ -25,10 +28,15 @@ class Command(BaseCommand):
             self.stdout.write("⚠️ Superuser already exists")
             return
 
-        user = User.objects.create_superuser(
-            username=username,
-            email=email,
-            password=password,
-        )
+        try:
+            user = User.objects.create_superuser(
+                username=username,
+                email=email,
+                password=password,
+            )
+            self.stdout.write(f"✅ Superuser CREATED: {user.username}")
 
-        self.stdout.write(f"✅ Superuser CREATED: {user.username}")
+        except Exception as e:
+            self.stderr.write("❌ FAILED TO CREATE SUPERUSER")
+            self.stderr.write(str(e))
+            self.stderr.write(traceback.format_exc())
