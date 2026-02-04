@@ -28,7 +28,7 @@
 
     /* When sidebar is collapsed */
     .sidebar-collapse .content-wrapper {
-        margin-left: 4.6rem !important;
+        margin-left: 80px !important;
     }
 
     /* Full-screen dashboard styling */
@@ -41,14 +41,15 @@
 
     /* Fix padding so it still looks clean */
     .content {
-        padding: 20px !important;
+        padding: 15px !important;
         margin: 0 !important;
         box-sizing: border-box;
+        width: 100% !important;
     }
 
     .content-header {
-        padding: 15px 20px !important;
-        margin: 0 0 10px 0 !important;
+        padding: 10px 15px !important;
+        margin: 0 0 5px 0 !important;
         box-sizing: border-box;
     }
 
@@ -60,6 +61,7 @@
         box-sizing: border-box;
         overflow-x: hidden !important;
         width: 100% !important;
+        max-width: 100% !important;
     }
 
     /* Prevent rows from overflowing */
@@ -72,8 +74,9 @@
 
     /* Fix column padding */
     .row > [class*="col-"] {
-        padding-left: 10px;
-        padding-right: 10px;
+        padding-left: 8px;
+        padding-right: 8px;
+        margin-bottom: 15px;
     }
 
     /* Ensure all columns fit properly */
@@ -81,11 +84,20 @@
         box-sizing: border-box;
     }
 
+    /* Make cards more compact */
+    .card {
+        margin-bottom: 15px !important;
+    }
+
+    .small-box {
+        margin-bottom: 0 !important;
+    }
+
     /* Chart containers */
     .chart-container {
         position: relative;
-        height: 300px;
-        padding: 15px;
+        height: 280px;
+        padding: 10px;
         max-width: 100%;
     }
 
@@ -146,27 +158,36 @@
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .chart-container {
-            height: 250px;
+            height: 220px;
         }
 
         .content {
-            padding: 15px !important;
+            padding: 10px !important;
         }
 
         .content-header {
-            padding: 10px 15px;
+            padding: 8px 10px !important;
         }
 
         /* Ensure sidebar takes no space when collapsed on mobile */
         .sidebar-collapse .content-wrapper {
-            margin-left: 0 !important;
+            margin-left: 60px !important;
+        }
+
+        .row > [class*="col-"] {
+            padding-left: 5px;
+            padding-right: 5px;
         }
     }
 
     /* Medium screens */
     @media (max-width: 1200px) {
         .content {
-            padding: 15px 20px !important;
+            padding: 12px !important;
+        }
+
+        .sidebar-collapse .content-wrapper {
+            margin-left: 70px !important;
         }
     }
 
