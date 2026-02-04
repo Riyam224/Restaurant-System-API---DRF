@@ -2,7 +2,6 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView
 
-from core.views import force_create_admin
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
@@ -18,7 +17,6 @@ urlpatterns = [
         name="api-root",
     ),
     path("admin/", admin.site.urls),
-    path("force-create-admin/", force_create_admin),
     # APIs v1
     path("api/v1/", include("accounts.urls")),
     path("api/v1/", include("menu.urls")),
