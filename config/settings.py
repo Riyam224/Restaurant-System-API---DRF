@@ -188,9 +188,6 @@ SPECTACULAR_SETTINGS = {
         "docExpansion": "none",
         "persistAuthorization": True,
     },
-    "ENUM_NAME_OVERRIDES": {
-        "StatusD80Enum": "orders.Order.status",
-    },
 }
 
 # --------------------------------------------------

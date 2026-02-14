@@ -82,7 +82,7 @@ class CartAPIView(APIView):
             "quantity": serializers.IntegerField(
                 required=False,
                 default=1,
-                min_value=Decimal("1"),
+                min_value=1,
             ),
         },
     ),
@@ -137,7 +137,7 @@ class AddToCartAPIView(APIView):
                 "quantity": serializers.IntegerField(
                     required=False,
                     default=1,
-                    min_value=Decimal("1"),
+                    min_value=1,
                 ),
             },
             data=request.data,
