@@ -7,6 +7,7 @@ from .views import (
     ForgotPasswordAPIView,
     VerifyOTPAPIView,
     ResetPasswordAPIView,
+    GoogleAuthAPIView,
 )
 
 app_name = "accounts"
@@ -16,6 +17,7 @@ urlpatterns = [
     path("auth/register", RegisterAPIView.as_view(), name="register"),
     path("auth/login", LoginAPIView.as_view(), name="login"),
     path("auth/refresh", RefreshTokenAPIView.as_view(), name="refresh"),
+    path("auth/google", GoogleAuthAPIView.as_view(), name="google-auth"),
 
     # User Profile
     path("profile", ProfileAPIView.as_view(), name="profile"),

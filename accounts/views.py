@@ -20,7 +20,9 @@ from .serializers import (
     ForgotPasswordSerializer,
     VerifyOTPSerializer,
     ResetPasswordSerializer,
+    GoogleAuthSerializer,
 )
+from .services import UserService
 
 # todo - move to utils
 
@@ -359,4 +361,97 @@ class ResetPasswordAPIView(APIView):
         return Response(
             {"message": "Password has been reset successfully."},
             status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(
+    tags=["Authentication"],
+    request=GoogleAuthSerializer,
+    responses={
+        200: OpenApiResponse(
+            description="JWT token pair",
+            examples=[
+                OpenApiExample(
+                    "Google Auth Response",
+                    value={
+                        "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "user": {
+                            "id": 1,
+                            "username": "john",
+                            "email": "john@example.com",
+                            "first_name": "John",
+                            "last_name": "Doe",
+                            "avatar": "https://lh3.googleusercontent.com/...",
+                            "phone": None,
+                            "role": "customer",
+                            "is_verified": True
+                        },
+                        "created": False
+                    },
+                    response_only=True,
+                )
+            ],
+        ),
+        400: OpenApiResponse(description="Invalid Google token"),
+    },
+    examples=[
+        OpenApiExample(
+            "Google Auth Request",
+            value={
+                "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE4MmU0M2NkZGY2N..."
+            },
+            request_only=True,
+        ),
+    ],
+)
+class GoogleAuthAPIView(APIView):
+    """
+    Authenticate with Google OAuth.
+
+    Send the Google ID token from the frontend Google Sign-In.
+    Returns JWT access and refresh tokens.
+
+    **Flow:**
+    1. Frontend uses Google Sign-In to get ID token
+    2. Frontend sends ID token to this endpoint
+    3. Backend verifies token with Google
+    4. Backend creates/updates user account
+    5. Backend returns JWT tokens for authentication
+    """
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        # Validate the Google ID token
+        serializer = GoogleAuthSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Get verified Google user data
+        google_user_data = serializer.validated_data['google_user_data']
+
+        # Create or update user using the service
+        user, created = UserService.create_or_update_from_google(google_user_data)
+
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+
+        return Response(
+            {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "avatar": user.avatar,
+                    "phone": user.phone,
+                    "role": user.role,
+                    "is_verified": user.is_verified,
+                },
+                "created": created,
+            },
+            status=status.HTTP_200_OK
         )

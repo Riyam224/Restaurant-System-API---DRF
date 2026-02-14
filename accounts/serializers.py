@@ -3,6 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from .models import PasswordResetOTP
 from django.contrib.auth import get_user_model
+from .services import GoogleOAuthService, UserService
 
 User = get_user_model()
 
@@ -35,16 +36,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         """Create and return a new user"""
         # If username not provided, generate from email
         if not validated_data.get("username"):
-            validated_data["username"] = validated_data["email"].split("@")[0]
-
-        # Ensure username is unique
-        base_username = validated_data["username"]
-        username = base_username
-        counter = 1
-        while User.objects.filter(username=username).exists():
-            username = f"{base_username}{counter}"
-            counter += 1
-        validated_data["username"] = username
+            base_username = validated_data["email"].split("@")[0]
+            validated_data["username"] = UserService.generate_unique_username(base_username)
+        else:
+            # Ensure username is unique
+            base_username = validated_data["username"]
+            validated_data["username"] = UserService.generate_unique_username(base_username)
 
         user = User.objects.create_user(
             username=validated_data["username"],
@@ -169,4 +166,42 @@ class ResetPasswordSerializer(serializers.Serializer):
 
         attrs["otp_obj"] = otp_obj
         attrs["user"] = user
+        return attrs
+
+
+class GoogleAuthSerializer(serializers.Serializer):
+    """
+    Serializer for Google OAuth authentication.
+
+    Validates Google ID token and returns user data.
+    Uses GoogleOAuthService for token verification.
+    """
+
+    id_token = serializers.CharField(required=True, write_only=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.google_service = GoogleOAuthService()
+
+    def validate_id_token(self, value):
+        """
+        Verify Google ID token and extract user info.
+
+        Args:
+            value: Google ID token string
+
+        Returns:
+            Dictionary containing verified user information
+
+        Raises:
+            ValidationError: If token is invalid
+        """
+        return self.google_service.verify_token(value)
+
+    def validate(self, attrs):
+        """
+        Store the verified Google user data for later use.
+        """
+        # The id_token field now contains the verified user data
+        attrs['google_user_data'] = attrs['id_token']
         return attrs
