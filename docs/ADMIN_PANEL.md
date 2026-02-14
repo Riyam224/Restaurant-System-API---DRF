@@ -4,9 +4,10 @@
 1. [Quick Start](#quick-start)
 2. [What's New](#whats-new)
 3. [Features](#features)
-4. [Customization Guide](#customization-guide)
-5. [File Structure](#file-structure)
-6. [Troubleshooting](#troubleshooting)
+4. [Analytics Dashboard](#analytics-dashboard)
+5. [Customization Guide](#customization-guide)
+6. [File Structure](#file-structure)
+7. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -142,6 +143,62 @@ Organized by business priority:
 - **Forms**: Modern input fields with focus states
 - **Badges**: Color-coded status indicators
 - **Animations**: Smooth fade-in and hover effects
+
+---
+
+## Analytics Dashboard
+
+The admin dashboard includes powerful analytics features powered by AI.
+
+### AI-Powered Insights
+
+When you access the admin dashboard, you'll see:
+
+1. **Real-Time KPIs**
+   - Revenue with growth percentages
+   - Order counts and trends
+   - User statistics
+   - Average order value
+
+2. **Interactive Charts** (powered by Chart.js)
+   - Revenue trend chart with 30-day history
+   - Order status breakdown (donut chart)
+   - Top 10 products performance
+
+3. **AI Business Insights** (powered by Claude Sonnet 4.5)
+   - Natural language business summaries
+   - AI-identified opportunities
+   - Warnings about potential issues
+   - Actionable recommendations
+
+4. **Anomaly Detection**
+   - Automatic detection of unusual patterns
+   - Revenue spikes and drops
+   - Order volume anomalies
+   - AI-generated explanations
+
+### Setting Up Analytics
+
+The analytics dashboard requires:
+
+1. **Admin permissions** - Your user must have `is_staff=True`
+2. **Anthropic API key** (for AI features) - Add to `.env`:
+   ```
+   ANTHROPIC_API_KEY=sk-ant-your-key-here
+   ```
+
+3. **Test data** - Run to populate with sample data:
+   ```bash
+   python seed_test_data.py
+   ```
+
+### Accessing Analytics
+
+- **Admin Dashboard**: http://localhost:8000/admin/ (includes charts and AI insights)
+- **Analytics API**: http://localhost:8000/api/v1/analytics/dashboard/
+- **Full Analytics Guide**: See [docs/ANALYTICS_GUIDE.md](ANALYTICS_GUIDE.md)
+
+The dashboard automatically loads analytics data when you visit the admin index page. All data is cached for performance (5-30 minutes depending on the metric).
 
 ---
 
