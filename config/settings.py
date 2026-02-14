@@ -12,6 +12,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 # --------------------------------------------------
+# FIREBASE ADMIN
+# --------------------------------------------------
+import firebase_admin
+from firebase_admin import credentials
+
+cred = credentials.Certificate("config/bitego-dev-firebase-adminsdk-fbsvc-5bb35c001b.json")
+firebase_admin.initialize_app(cred)
+
+# --------------------------------------------------
 # CORE
 # --------------------------------------------------
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-dev-secret-key")

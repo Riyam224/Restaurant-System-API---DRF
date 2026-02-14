@@ -8,8 +8,7 @@ separating concerns from serializers and views.
 from typing import Dict, Tuple
 import logging
 from django.contrib.auth import get_user_model
-from google.oauth2 import id_token
-from google.auth.transport import requests
+from firebase_admin import auth as firebase_auth
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
@@ -42,7 +41,7 @@ class GoogleOAuthService:
 
     def verify_token(self, token: str) -> Dict[str, any]:
         """
-        Verify Google ID token and extract user information.
+        Verify Google ID token using Firebase Admin SDK.
 
         Args:
             token: Google ID token string
@@ -54,47 +53,48 @@ class GoogleOAuthService:
             ValidationError: If token is invalid or verification fails
         """
         try:
-            # Verify the token with Google
-            idinfo = id_token.verify_oauth2_token(
-                token,
-                requests.Request(),
-                self.client_id
-            )
+            # Verify the token with Firebase Admin SDK
+            decoded_token = firebase_auth.verify_id_token(token)
 
-            # Verify the token audience
-            if idinfo.get('aud') != self.client_id:
-                raise ValidationError('Invalid token audience')
+            # Extract user information
+            return self._extract_user_info(decoded_token)
 
-            # Verify the token issuer
-            if idinfo.get('iss') not in self.VALID_ISSUERS:
-                raise ValidationError('Invalid token issuer')
-
-            return self._extract_user_info(idinfo)
-
-        except ValueError as e:
-            logger.error(f"Google token verification failed: {str(e)}")
+        except firebase_auth.InvalidIdTokenError as e:
+            logger.error(f"Invalid Firebase token: {str(e)}")
             raise ValidationError(f'Invalid Google token: {str(e)}')
+        except firebase_auth.ExpiredIdTokenError as e:
+            logger.error(f"Expired Firebase token: {str(e)}")
+            raise ValidationError('Token has expired')
+        except firebase_auth.RevokedIdTokenError as e:
+            logger.error(f"Revoked Firebase token: {str(e)}")
+            raise ValidationError('Token has been revoked')
         except Exception as e:
             logger.error(f"Unexpected error during token verification: {str(e)}")
             raise ValidationError('Token verification failed')
 
-    def _extract_user_info(self, idinfo: Dict) -> Dict[str, any]:
+    def _extract_user_info(self, decoded_token: Dict) -> Dict[str, any]:
         """
-        Extract and normalize user information from verified token.
+        Extract and normalize user information from verified Firebase token.
 
         Args:
-            idinfo: Verified token information from Google
+            decoded_token: Verified token information from Firebase
 
         Returns:
             Dictionary with normalized user information
         """
+        # Split name into first and last name if available
+        name = decoded_token.get('name', '')
+        name_parts = name.split(' ', 1) if name else ['', '']
+        first_name = name_parts[0] if len(name_parts) > 0 else ''
+        last_name = name_parts[1] if len(name_parts) > 1 else ''
+
         return {
-            'email': idinfo.get('email', '').lower(),
-            'email_verified': idinfo.get('email_verified', False),
-            'first_name': idinfo.get('given_name', ''),
-            'last_name': idinfo.get('family_name', ''),
-            'avatar': idinfo.get('picture', ''),
-            'google_id': idinfo.get('sub', ''),
+            'email': decoded_token.get('email', '').lower(),
+            'email_verified': decoded_token.get('email_verified', False),
+            'first_name': first_name,
+            'last_name': last_name,
+            'avatar': decoded_token.get('picture', ''),
+            'google_id': decoded_token.get('uid', ''),
         }
 
 
