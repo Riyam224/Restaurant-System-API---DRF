@@ -16,8 +16,18 @@ load_dotenv(BASE_DIR / ".env")
 # --------------------------------------------------
 import firebase_admin
 from firebase_admin import credentials
+import json
 
-cred = credentials.Certificate("config/bitego-dev-firebase-adminsdk-fbsvc-5bb35c001b.json")
+# Load Firebase credentials from environment variable in production, file in development
+firebase_cred_json = os.getenv("FIREBASE_CREDENTIALS")
+if firebase_cred_json:
+    # Production: Load from environment variable
+    firebase_cred_dict = json.loads(firebase_cred_json)
+    cred = credentials.Certificate(firebase_cred_dict)
+else:
+    # Development: Load from file
+    cred = credentials.Certificate("config/bitego-dev-firebase-adminsdk-fbsvc-5bb35c001b.json")
+
 firebase_admin.initialize_app(cred)
 
 # --------------------------------------------------
